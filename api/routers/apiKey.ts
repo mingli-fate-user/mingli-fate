@@ -6,20 +6,17 @@ import { eq, and } from "drizzle-orm";
 import { verifyToken } from "./user";
 
 export const apiKeyRouter = createRouter({
-  // 保存用户的API密钥
   save: publicQuery
-    .input(
-      z.object({
-        key: z.string().min(10),
-        provider: z.string().default("siliconflow"),
-        token: z.string(),
-      })
-    )
+    .input(z.object({
+      key: z.string().min(10),
+      provider: z.string().default("siliconflow"),
+      token: z.string(),
+    }))
     .mutation(async ({ input }) => {
       const payload = await verifyToken(input.token);
       if (!payload) throw new Error("请先登录");
 
-      const db = await getDb();
+      const db = getDb();
 
       // 先禁用之前激活的key
       await db.update(apiKeys)
@@ -32,19 +29,18 @@ export const apiKeyRouter = createRouter({
         provider: input.provider,
         key: input.key,
         isActive: 1,
-      }).$returningId();
+      }).returning({ id: apiKeys.id });
 
       return { id: result[0].id };
     }),
 
-  // 获取用户当前激活的API密钥
   myKey: publicQuery
     .input(z.object({ token: z.string() }))
     .query(async ({ input }) => {
       const payload = await verifyToken(input.token);
       if (!payload) return null;
 
-      const db = await getDb();
+      const db = getDb();
       const keys = await db.select()
         .from(apiKeys)
         .where(and(
@@ -55,7 +51,6 @@ export const apiKeyRouter = createRouter({
 
       if (keys.length === 0) return null;
 
-      // 只返回前缀，不暴露完整key
       const key = keys[0].key;
       return {
         id: keys[0].id,
@@ -65,15 +60,12 @@ export const apiKeyRouter = createRouter({
       };
     }),
 
-  // 测试API密钥是否可用
   test: publicQuery
     .input(z.object({ key: z.string() }))
     .mutation(async ({ input }) => {
       try {
         const resp = await fetch("https://api.siliconflow.cn/v1/models", {
-          headers: {
-            Authorization: `Bearer ${input.key}`,
-          },
+          headers: { Authorization: `Bearer ${input.key}` },
         });
         if (resp.ok) {
           return { valid: true, message: "API密钥验证成功" };
@@ -85,14 +77,13 @@ export const apiKeyRouter = createRouter({
       }
     }),
 
-  // 删除用户的API密钥
   delete: publicQuery
     .input(z.object({ token: z.string() }))
     .mutation(async ({ input }) => {
       const payload = await verifyToken(input.token);
       if (!payload) throw new Error("请先登录");
 
-      const db = await getDb();
+      const db = getDb();
       await db.delete(apiKeys).where(eq(apiKeys.userId, payload.userId));
       return { ok: true };
     }),

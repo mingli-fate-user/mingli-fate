@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && esbuild api/boot.ts --platform=node --bundle --format=esm --outdir=dist --banner:js=\"import { createRequire } from 'module';const require = createRequire(import.meta.url);\"",
+    "build": "vite build && esbuild api/boot.ts --platform=node --bundle --format=esm --outdir=dist --external:jsonwebtoken --external:pg --external:mysql2",
     "lint": "eslint .",
     "preview": "vite preview",
     "start": "node db/init.mjs && NODE_ENV=production node dist/boot.js",

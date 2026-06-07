@@ -1,84 +1,82 @@
 import {
-  mysqlTable,
+  pgTable,
   serial,
   varchar,
   text,
   timestamp,
-  int,
-  json,
-} from "drizzle-orm/mysql-core";
+  integer,
+  jsonb,
+} from "drizzle-orm/pg-core";
 
 // ==================== 用户表 ====================
-export const users = mysqlTable("users", {
+export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: varchar("username", { length: 50 }).notNull().unique(),
-  passwordHash: varchar("password_hash", { length: 255 }).notNull().default(""),
+  passwordHash: text("password_hash").notNull(),
   nickname: varchar("nickname", { length: 50 }),
-  avatar: varchar("avatar", { length: 500 }),
-  unionId: varchar("union_id", { length: 255 }),
+  avatar: text("avatar"),
   role: varchar("role", { length: 20 }).notNull().default("user"),
-  lastSignInAt: timestamp("last_sign_in_at"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
-
-// ==================== 社区帖子表 ====================
-export const posts = mysqlTable("posts", {
-  id: serial("id").primaryKey(),
-  userId: int("user_id").notNull(),
-  title: varchar("title", { length: 200 }).notNull(),
-  content: text("content").notNull(),
-  category: varchar("category", { length: 50 }).notNull(),
-  likes: int("likes").notNull().default(0),
-  commentsCount: int("comments_count").notNull().default(0),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
-
-// ==================== 社区评论表 ====================
-export const comments = mysqlTable("comments", {
-  id: serial("id").primaryKey(),
-  postId: int("post_id").notNull(),
-  userId: int("user_id").notNull(),
-  content: text("content").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
-
-// ==================== API密钥表 ====================
-export const apiKeys = mysqlTable("api_keys", {
-  id: serial("id").primaryKey(),
-  userId: int("user_id").notNull(),
-  provider: varchar("provider", { length: 50 }).notNull().default("siliconflow"),
-  key: text("key").notNull(),
-  isActive: int("is_active").notNull().default(1),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
-
-// ==================== AI聊天记录表 ====================
-export const aiChats = mysqlTable("ai_chats", {
-  id: serial("id").primaryKey(),
-  userId: int("user_id").notNull(),
-  toolType: varchar("tool_type", { length: 50 }).notNull(),
-  recordId: int("record_id"),
-  messages: json("messages").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
-
-// ==================== 面相解析记录表 ====================
-export const mianxiangRecords = mysqlTable("mianxiang_records", {
-  id: serial("id").primaryKey(),
-  userId: int("user_id").notNull(),
-  mode: varchar("mode", { length: 20 }).notNull(),
-  messages: json("messages").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 // ==================== 排盘记录表 ====================
-export const records = mysqlTable("records", {
+export const records = pgTable("records", {
   id: serial("id").primaryKey(),
-  userId: int("user_id").notNull(),
+  userId: integer("user_id").notNull(),
   type: varchar("type", { length: 50 }).notNull(),
-  name: varchar("name", { length: 200 }).notNull(),
-  data: json("data").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  title: text("title").notNull(),
+  data: jsonb("data").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+// ==================== 社区帖子表 ====================
+export const posts = pgTable("posts", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  category: varchar("category", { length: 50 }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+// ==================== 社区评论表 ====================
+export const comments = pgTable("comments", {
+  id: serial("id").primaryKey(),
+  postId: integer("post_id").notNull(),
+  userId: integer("user_id").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+// ==================== API密钥表 ====================
+export const apiKeys = pgTable("api_keys", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  provider: varchar("provider", { length: 50 }).notNull().default("siliconflow"),
+  key: text("key").notNull(),
+  isActive: integer("is_active").notNull().default(1),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+// ==================== AI聊天记录表 ====================
+export const aiChats = pgTable("ai_chats", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  toolType: varchar("tool_type", { length: 50 }).notNull(),
+  recordId: integer("record_id"),
+  messages: jsonb("messages").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+// ==================== 面相解析记录表 ====================
+export const mianxiangRecords = pgTable("mianxiang_records", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  mode: varchar("mode", { length: 20 }).notNull(),
+  messages: jsonb("messages").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export type User = typeof users.$inferSelect;
+export type InsertUser = typeof users.$inferInsert;
