@@ -1,5 +1,6 @@
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+// 强制使用 PostgreSQL 驱动，无视 URL 协议
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
 import { env } from "../lib/env";
 import * as schema from "@db/schema";
 import * as relations from "@db/relations";
@@ -10,20 +11,19 @@ let instance: any;
 
 export function getDb() {
   if (!instance) {
-    console.log("[DB] Creating postgres-js client...");
-    console.log("[DB] URL prefix:", env.databaseUrl?.substring(0, 30));
-    const client = postgres(env.databaseUrl, {
-      ssl: { rejectUnauthorized: false },
-      max: 5,
-    });
-    instance = drizzle(client, { schema: fullSchema });
-    // DEBUG: print dialect escapeName
-    const dialect = (instance as any).session?.dialect;
-    if (dialect) {
-      console.log("[DB] Dialect escapeName test:", dialect.escapeName("users"));
-      console.log("[DB] Dialect constructor:", dialect.constructor?.name);
+    // 强制转换为 postgresql:// URL
+    let url = env.databaseUrl;
+    if (url.startsWith("mysql://")) {
+      url = url.replace("mysql://", "postgresql://");
     }
-    console.log("[DB] postgres-js client created");
+    console.log("[DB] Connecting with URL prefix:", url.substring(0, 25));
+
+    const pool = new Pool({
+      connectionString: url,
+      ssl: { rejectUnauthorized: false },
+    });
+    instance = drizzle(pool, { schema: fullSchema });
+    console.log("[DB] Connected");
   }
   return instance;
 }
