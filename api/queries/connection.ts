@@ -1,5 +1,5 @@
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
 import { env } from "../lib/env";
 import * as schema from "@db/schema";
 import * as relations from "@db/relations";
@@ -8,18 +8,16 @@ const fullSchema = { ...schema, ...relations };
 
 let instance: any;
 
-// DEBUG
-console.log("[DB] databaseUrl:", env.databaseUrl?.substring(0, 30) + "...");
-
 export function getDb() {
   if (!instance) {
-    console.log("[DB] Creating postgres-js client...");
-    const client = postgres(env.databaseUrl, {
+    console.log("[DB] Using node-postgres driver");
+    console.log("[DB] URL prefix:", env.databaseUrl?.substring(0, 15));
+    const pool = new Pool({
+      connectionString: env.databaseUrl,
       ssl: { rejectUnauthorized: false },
-      max: 5,
     });
-    instance = drizzle(client, { schema: fullSchema });
-    console.log("[DB] postgres-js client created");
+    instance = drizzle(pool, { schema: fullSchema });
+    console.log("[DB] node-postgres driver ready");
   }
   return instance;
 }
