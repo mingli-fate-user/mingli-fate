@@ -1,0 +1,16 @@
+{
+  "categories": [
+    { "id": "liuyao", "name": "六爻占卜" }
+  ],
+  "books": [
+    {
+      "id": "1",
+      "title": "倪海厦六十四金钱卦全解",
+      "category": "六爻占卜",
+      "file": "liuyao/nihaixia-64-guapu.pdf",
+      "cover": "covers/nihaixia-64-guapu.png",
+      "size": "14.8MB",
+      "pages": 201
+    }
+  ]
+}

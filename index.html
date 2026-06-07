@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="黄师傅命理科普 - 面相学、紫微斗数、六爻解卦、江氏小六壬、奇门遁甲、金钱卦、AI面相分析" />
+    <meta name="theme-color" content="#1a1a2e" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="黄师傅命理" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <title>黄师傅 - 命理科普</title>
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <!-- Google Fonts: Noto Serif SC for Chinese serif/kaiti -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <!-- DNS 预解析 -->
+    <link rel="dns-prefetch" href="//api.siliconflow.cn" />
+  </head>
+  <body>
+    <div id="root">
+      <!-- 首屏骨架屏 -->
+      <style>
+        .skeleton {
+          position: fixed;
+          inset: 0;
+          background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          z-index: 9999;
+        }
+        .skeleton-spinner {
+          width: 40px;
+          height: 40px;
+          border: 2px solid rgba(255,255,255,0.3);
+          border-top-color: #60a5fa;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin-bottom: 16px;
+        }
+        .skeleton-text {
+          color: rgba(255,255,255,0.5);
+          font-size: 14px;
+          font-family: 'Noto Sans SC', system-ui, sans-serif;
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      </style>
+      <div class="skeleton" id="skeleton-root">
+        <div class="skeleton-spinner"></div>
+        <div class="skeleton-text">加载中...</div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // 注册Service Worker（PWA）
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').then((reg) => {
+            reg.update();
+          }).catch(() => {});
+        });
+      }
+      // 加载超时兜底
+      setTimeout(function() {
+        var sk = document.getElementById('skeleton-root');
+        if (sk && document.body.contains(sk)) {
+          if ('caches' in window) {
+            caches.keys().then(function(names) {
+              return Promise.all(names.map(function(n){ return caches.delete(n); }));
+            }).then(function() {
+              location.reload(true);
+            }).catch(function() {
+              location.reload(true);
+            });
+          } else {
+            location.reload(true);
+          }
+        }
+      }, 8000);
+    </script>
+  </body>
+</html>

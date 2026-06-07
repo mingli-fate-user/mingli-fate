@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "mingli-books",
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/books/(.*)", "dest": "/books/$1" },
+    { "src": "/assets/(.*)", "dest": "/assets/$1" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
+}
