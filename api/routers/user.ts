@@ -37,6 +37,14 @@ export const userRouter = createRouter({
     .mutation(async ({ input }) => {
       const db = getDb();
 
+      // DEBUG: Force print dialect info
+      const dialect = (db as any).session?.dialect;
+      if (dialect) {
+        console.log("[DIALECT] Name:", dialect.constructor?.name);
+        console.log("[DIALECT] escapeName:", dialect.escapeName("users"));
+        console.log("[DIALECT] escapeParam:", dialect.escapeParam(0));
+      }
+
       // 检查用户名是否已存在
       const existing = await db.select().from(users).where(eq(users.username, input.username)).limit(1);
       if (existing.length > 0) {
