@@ -9,6 +9,10 @@ import { env } from "./lib/env";
 import { createOAuthCallbackHandler } from "./kimi/auth";
 import { Paths } from "@contracts/constants";
 
+// DEBUG: Check drizzle-orm version and dialect
+import * as drizzlePkg from "drizzle-orm/package.json";
+console.log("[BOOT] drizzle-orm version:", drizzlePkg.default?.version || (drizzlePkg as any).version);
+
 const app = new Hono<{ Bindings: HttpBindings }>();
 
 // CORS - 允许 GitHub Pages 和本地开发访问
