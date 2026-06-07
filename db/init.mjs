@@ -1,10 +1,14 @@
 // 数据库初始化脚本 - PostgreSQL (postgres-js)
 import postgres from "postgres";
 
-const dbUrl = process.env.DATABASE_URL;
+let dbUrl = process.env.DATABASE_URL;
 if (!dbUrl) {
   console.error("DATABASE_URL not set");
   process.exit(1);
+}
+// 强制使用 postgresql 协议
+if (dbUrl.startsWith("mysql://")) {
+  dbUrl = dbUrl.replace("mysql://", "postgresql://");
 }
 
 async function init() {
