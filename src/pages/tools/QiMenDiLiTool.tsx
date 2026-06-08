@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { streamSiliconAPI } from '@/utils/apiClient';
 import {
   Sparkles, ArrowRight, Mountain, Home, Star, Loader2,
 } from 'lucide-react';
@@ -7,7 +8,6 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { GONG_NAMES, type HouseLayout } from '@/data/xuankong';
 import { NO_MARKDOWN_RULE } from '@/utils/aiTextUtils';
 
-const API_KEY_PARTS = ['sk-exbzhkdd', 'usywrlknvkg', 'dzcgjraluip', 'qxhvquzeuw', 'byekdikl'];
 
 // 奇门遁甲占风水地理的九星含义
 const QMDL_STAR_MEANING: Record<string, { env: string; house: string; advice: string }> = {
@@ -192,7 +192,7 @@ export default function QiMenDiLiTool() {
   const [aiLoading, setAiLoading] = useState(false);
   const [copiedId, setCopiedId] = useState('');
 
-  const handleAI = useCallback(async () => {
+  const handleAI = useCallback(() => {
     const q = aiInput.trim() || question.trim();
     if (!q || !result) return;
 
@@ -200,32 +200,29 @@ export default function QiMenDiLiTool() {
     setAiMessages(prev => [...prev, { role: 'user', content: q, id: 'u_' + Date.now() }]);
     setAiInput('');
 
-    try {
-      const apiKey = API_KEY_PARTS.join('');
-      let prompt = `[奇门遁甲 · 风水地理排盘]\n\n${result.year}年${result.month}月${result.day}日 ${result.hour}时\n\n值符：${result.valueFu}\n值使：${result.valueShi}\n生门：${result.shengMenGong}宫\n\n九宫分布：\n`;
-      for (const g of result.gongs) {
-        prompt += `${g.direction}（${g.name}宫）：${g.star} · ${g.door} · ${g.gan}${g.zhi}\n`;
+    const id = 'a_' + Date.now();
+    setAiMessages(prev => [...prev, { role: 'assistant', content: '', id }]);
+
+    let prompt = `[奇门遁甲 · 风水地理排盘]\n\n${result.year}年${result.month}月${result.day}日 ${result.hour}时\n\n值符：${result.valueFu || '未知'}\n值使：${result.valueShi || '未知'}\n生门：${result.shengMenGong || '?'}宫\n\n九宫分布：\n`;
+    for (const g of (result.gongs || [])) {
+      prompt += `${g.direction || '?'}（${g.name || '?'}宫）：${g.star || '?'} · ${g.door || '?'} · ${g.gan || '?'}${g.zhi || '?'}\n`;
+    }
+    prompt += `\n整体：${result.overallAdvice || '暂无'}\n`;
+
+    if (importedLayout) {
+      prompt += `\n【户型数据】\n${importedLayout.name || '未命名户型'}\n`;
+      for (const room of (importedLayout.rooms || [])) {
+        prompt += `- ${room.name || '?'}位于${GONG_NAMES[room.gong || 5]?.direction || '中'}方\n`;
       }
-      prompt += `\n整体：${result.overallAdvice}\n`;
+    }
 
-      if (importedLayout) {
-        prompt += `\n【户型数据】\n${importedLayout.name}\n`;
-        for (const room of importedLayout.rooms) {
-          prompt += `- ${room.name}位于${GONG_NAMES[room.gong || 5]?.direction || '中'}方\n`;
-        }
-      }
+    prompt += `\n【问题】${q}\n\n请黄师傅以奇门遁甲风水学角度分析。`;
 
-      prompt += `\n【问题】${q}\n\n请黄师傅以奇门遁甲风水学角度分析。`;
-
-      const resp = await fetch('https://api.siliconflow.cn/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-        body: JSON.stringify({
-          model: 'deepseek-ai/DeepSeek-V4-Flash',
-          messages: [
-            {
-              role: 'system',
-              content: `你是黄师傅，精通奇门遁甲风水地理学。
+    let full = '';
+    streamSiliconAPI([
+      {
+        role: 'system',
+        content: `你是黄师傅，精通奇门遁甲风水地理学。
 
 【身份定位】
 自古就有"太乙明天道，奇门晓地理"的说法。你运用奇门遁甲模型解析风水地理。
@@ -239,23 +236,19 @@ export default function QiMenDiLiTool() {
 
 【语言风格】
 半文半白，铁口直断，引用奇门遁甲术语。严禁使用任何markdown格式符号（#和*），所有输出必须是纯文本。` + NO_MARKDOWN_RULE + ` `,
-            },
-            { role: 'user', content: prompt },
-          ],
-          temperature: 0.7,
-          max_tokens: 2000,
-        }),
-      });
-
-      const data = await resp.json();
-      const content = data.choices?.[0]?.message?.content || '解析失败';
-
-      setAiMessages(prev => [...prev, { role: 'assistant', content, id: 'a_' + Date.now() }]);
-    } catch {
-      setAiMessages(prev => [...prev, { role: 'assistant', content: '【黄师傅】天机暂隐，请稍后再试。', id: 'a_err_' + Date.now() }]);
-    } finally {
-      setAiLoading(false);
-    }
+      },
+      { role: 'user', content: prompt },
+    ], {
+      onChunk: (delta) => {
+        full += delta;
+        setAiMessages(prev => prev.map(m => m.id === id ? { ...m, content: full } : m));
+      },
+      onDone: () => setAiLoading(false),
+      onError: (err) => {
+        setAiLoading(false);
+        setAiMessages(prev => prev.map(m => m.id === id ? { ...m, content: `【黄师傅】${err}。` } : m));
+      },
+    }, { maxTokens: 2000 });
   }, [aiInput, result, importedLayout, question]);
 
   function copyText(text: string, id: string) {

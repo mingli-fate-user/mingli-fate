@@ -3,6 +3,13 @@ import { ArrowRight } from 'lucide-react';
 
 const toolGroups = [
   {
+    title: '择日通胜',
+    tagline: '仰观天文 · 俯察地理 · 趋吉避凶',
+    items: [
+      { name: '择日通胜', path: '/tools/tongsheng', icon: '\ud83d\udcc5', desc: '老黄历每日宜忌、吉神方位、时辰吉凶、黄道黑道', bg: '/bg-chinese.jpg' },
+    ],
+  },
+  {
     title: '上古三式',
     tagline: '太乙明天道 · 大六壬断人事 · 奇门晓地理',
     items: [
@@ -15,6 +22,7 @@ const toolGroups = [
     title: '命盘区',
     tagline: '观命定格局 · 知运察流年',
     items: [
+      { name: '七政四余', path: '/tools/qizheng', icon: '\ud83d\ude80', desc: '紫微斗数、八字等数术的源头，十一曜飞布十二宫', bg: '/bg-chinese.jpg' },
       { name: '八字排盘', path: '/tools/bazi', icon: '\ud83c\udfaf', desc: '四柱八字，十神格局，大运流年', bg: '/bg-chinese.jpg' },
       { name: '紫微斗数', path: '/tools/ziwei', icon: '\u2728', desc: '十二宫位，星曜飞化，四化飞星', bg: '/ziwei.jpg' },
       { name: '袁天罡称骨', path: '/tools/chenggu', icon: '\u2696\ufe0f', desc: '年月日时，骨重计算，称骨歌诀', bg: '/bg-chinese.jpg' },

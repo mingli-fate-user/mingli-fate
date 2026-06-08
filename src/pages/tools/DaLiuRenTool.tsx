@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { streamSiliconAPI } from '@/utils/apiClient';
 import {
   Sparkles, Send, X, Copy, Check, Loader2,
   RotateCcw, Crown, Flame, Wind, Zap,
@@ -16,7 +17,6 @@ import { NO_MARKDOWN_RULE } from '@/utils/aiTextUtils';
 // 顶级美学：荧光感 + 简约高级 + 暗色主题
 // ============================================================
 
-const API_KEY_PARTS = ['sk-exbzhkdd', 'usywrlknvkg', 'dzcgjraluip', 'qxhvquzeuw', 'byekdikl'];
 
 export default function DaLiuRenTool() {
   const [year, setYear] = useState(new Date().getFullYear());
@@ -54,26 +54,24 @@ export default function DaLiuRenTool() {
     }, 600);
   }, [year, month, day, hour, dayGanZhi, hourGanZhi, question]);
 
-  const handleAI = useCallback(async () => {
+  const handleAI = useCallback(() => {
     const q = aiInput.trim() || question;
     if (!q || !result) return;
+
     setAiLoading(true);
     setAiMessages(prev => [...prev, { role: 'user', content: q, id: 'u_' + Date.now() }]);
     setAiInput('');
 
-    try {
-      const apiKey = API_KEY_PARTS.join('');
-      const prompt = buildPrompt(result, q);
+    const id = 'a_' + Date.now();
+    setAiMessages(prev => [...prev, { role: 'assistant', content: '', id }]);
 
-      const resp = await fetch('https://api.siliconflow.cn/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-        body: JSON.stringify({
-          model: 'deepseek-ai/DeepSeek-V4-Flash',
-          messages: [
-            {
-              role: 'system',
-              content: `你是黄师傅，精通大六壬（六壬神课）的命理大师。
+    const prompt = buildPrompt(result, q);
+    let full = '';
+
+    streamSiliconAPI([
+      {
+        role: 'system',
+        content: `你是黄师傅，精通大六壬（六壬神课）的命理大师。
 
 【身份定位】
 大六壬与奇门遁甲、太乙神数并称"三式"，是古代最高层次的预测学，尤擅人事推演，被誉为"人事之王"。
@@ -87,50 +85,51 @@ export default function DaLiuRenTool() {
 
 【语言风格】
 铁口直断，引用古籍增强权威感。严禁使用任何markdown格式符号（#和*），所有输出必须是纯文本。` + NO_MARKDOWN_RULE + ` `,
-            },
-            { role: 'user', content: prompt },
-          ],
-          temperature: 0.7,
-          max_tokens: 2000,
-        }),
-      });
-
-      const data = await resp.json();
-      const content = data.choices?.[0]?.message?.content || '解析失败';
-      setAiMessages(prev => [...prev, { role: 'assistant', content, id: 'a_' + Date.now() }]);
-    } catch {
-      setAiMessages(prev => [...prev, { role: 'assistant', content: '【黄师傅】天机暂隐，请稍后再试。', id: 'a_err_' + Date.now() }]);
-    } finally {
-      setAiLoading(false);
-    }
+      },
+      { role: 'user', content: prompt },
+    ], {
+      onChunk: (delta) => {
+        full += delta;
+        setAiMessages(prev => prev.map(m => m.id === id ? { ...m, content: full } : m));
+      },
+      onDone: () => setAiLoading(false),
+      onError: (err) => {
+        setAiLoading(false);
+        setAiMessages(prev => prev.map(m => m.id === id ? { ...m, content: `【黄师傅】${err}。` } : m));
+      },
+    }, { maxTokens: 2000 });
   }, [aiInput, result]);
 
   function buildPrompt(res: DaLiuRenResult, q: string): string {
-    return `[大六壬排盘]
+    try {
+      return `[大六壬排盘]
 
 ${res.year}年${res.month}月${res.day}日 ${res.hour}时
-节气：${res.jieQi}
-日干支：${res.dayGanZhi} · 时干支：${res.hourGanZhi}
-月将：${res.yueJiang.name}（${res.yueJiang.zhi}）
+节气：${res.jieQi || '未知'}
+日干支：${res.dayGanZhi || '未知'} · 时干支：${res.hourGanZhi || '未知'}
+月将：${res.yueJiang?.name || '未知'}（${res.yueJiang?.zhi || '未知'}）
 
 【四课】
-第一课：${res.siKe.ke1[0]} / ${res.siKe.ke1[1]}
-第二课：${res.siKe.ke2[0]} / ${res.siKe.ke2[1]}
-第三课：${res.siKe.ke3[0]} / ${res.siKe.ke3[1]}
-第四课：${res.siKe.ke4[0]} / ${res.siKe.ke4[1]}
+第一课：${res.siKe?.ke1?.[0] || '?'} / ${res.siKe?.ke1?.[1] || '?'}
+第二课：${res.siKe?.ke2?.[0] || '?'} / ${res.siKe?.ke2?.[1] || '?'}
+第三课：${res.siKe?.ke3?.[0] || '?'} / ${res.siKe?.ke3?.[1] || '?'}
+第四课：${res.siKe?.ke4?.[0] || '?'} / ${res.siKe?.ke4?.[1] || '?'}
 
 【三传】
-初传：${res.sanChuan.chu.zhi} · ${res.sanChuan.chu.jiang} · ${res.sanChuan.chu.liuQin}
-中传：${res.sanChuan.zhong.zhi} · ${res.sanChuan.zhong.jiang} · ${res.sanChuan.zhong.liuQin}
-末传：${res.sanChuan.mo.zhi} · ${res.sanChuan.mo.jiang} · ${res.sanChuan.mo.liuQin}
-起传法：${res.sanChuan.method}
+初传：${res.sanChuan?.chu?.zhi || '?'} · ${res.sanChuan?.chu?.jiang || '?'} · ${res.sanChuan?.chu?.liuQin || '?'}
+中传：${res.sanChuan?.zhong?.zhi || '?'} · ${res.sanChuan?.zhong?.jiang || '?'} · ${res.sanChuan?.zhong?.liuQin || '?'}
+末传：${res.sanChuan?.mo?.zhi || '?'} · ${res.sanChuan?.mo?.jiang || '?'} · ${res.sanChuan?.mo?.liuQin || '?'}
+起传法：${res.sanChuan?.method || '未知'}
 
 【格局】
-${res.geJu.map(g => `${g.name}：${g.desc}`).join('\n')}
+${(res.geJu || []).map((g: any) => `${g.name}：${g.desc}`).join('\n')}
 
 【问题】${q}
 
 请黄师傅以大六壬课式详细分析。`;
+    } catch (e) {
+      return `[大六壬排盘]\n\n排盘数据：${JSON.stringify(res, null, 2)}\n\n【问题】${q}\n\n请黄师傅以大六壬课式详细分析。`;
+    }
   }
 
   function copyText(text: string, id: string) {

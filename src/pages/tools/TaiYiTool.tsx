@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { streamSiliconAPI } from '@/utils/apiClient';
 import {
   Crown, Sparkles, Send, X, Copy, Check, Loader2,
   RotateCcw, Save, ChevronDown, Info, Globe, Shield,
@@ -27,7 +28,6 @@ const JI_STYLES = [
   { value: 3, label: '时计', desc: '庶民之算，占一时之机' },
 ];
 
-const API_KEY_PARTS = ['sk-exbzhkdd', 'usywrlknvkg', 'dzcgjraluip', 'qxhvquzeuw', 'byekdikl'];
 
 export default function TaiYiTool() {
   const [year, setYear] = useState(new Date().getFullYear());
@@ -59,8 +59,8 @@ export default function TaiYiTool() {
     }, 800);
   }, [year, month, day, hour, jiStyle, question]);
 
-  // AI解析
-  const handleAIAsk = useCallback(async () => {
+  // AI解析（流式输出）
+  const handleAIAsk = useCallback(() => {
     const userQuestion = aiInput.trim() || question;
     if (!userQuestion) {
       alert('请输入您要咨询的国运问题');
@@ -84,29 +84,32 @@ export default function TaiYiTool() {
       return;
     }
 
+    // 必须先排盘
+    if (!result) {
+      setAiMessages(prev => [...prev, {
+        role: 'assistant',
+        content: '【黄师傅】请先点击「开始排盘」生成太乙盘，再提问。',
+        id: 'a_err_' + Date.now(),
+      }]);
+      return;
+    }
+
     setRejectedReason('');
     setAiLoading(true);
 
-    const userMsg = { role: 'user', content: userQuestion, id: 'u_' + Date.now() };
-    setAiMessages(prev => [...prev, userMsg]);
+    setAiMessages(prev => [...prev, { role: 'user', content: userQuestion, id: 'u_' + Date.now() }]);
     setAiInput('');
 
-    try {
-      const apiKey = API_KEY_PARTS.join('');
-      const prompt = buildTaiYiPrompt(result!, userQuestion);
+    const id = 'a_' + Date.now();
+    setAiMessages(prev => [...prev, { role: 'assistant', content: '', id }]);
 
-      const response = await fetch('https://api.siliconflow.cn/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: 'deepseek-ai/DeepSeek-V4-Flash',
-          messages: [
-            {
-              role: 'system',
-              content: `你是黄师傅，精通太乙神数（三式之首）的命理大师。
+    const prompt = buildTaiYiPrompt(result, userQuestion);
+    let full = '';
+
+    streamSiliconAPI([
+      {
+        role: 'system',
+        content: `你是黄师傅，精通太乙神数（三式之首）的命理大师。
 
 【身份定位】
 太乙神数乃上古帝王之术，《太乙金镜式经》云：「太乙者，天帝之神也，主司国运，统摄万方。」此术专用于占天文异象、察国运人事、断战争兵阵。
@@ -122,110 +125,68 @@ export default function TaiYiTool() {
 1. 先述当前太乙局数与阴阳遁
 2. 分析太乙所在宫位的国运含义
 3. 结合主客胜负判断国际力量对比
-4. 检视阳九百六等灾厄之兆
+4. 检视阳九百百六等灾厄之兆
 5. 综合格局给出国运走势判断
 6. 最后以勉励或警示结尾
 
 【语言风格】半文半白，铁口直断，引用《太乙金镜式经》《太乙统宗宝鉴》等古籍。严禁使用任何markdown格式符号（#和*），所有输出必须是纯文本。` + NO_MARKDOWN_RULE + ` `,
-            },
-            { role: 'user', content: prompt },
-          ],
-          temperature: 0.7,
-          max_tokens: 2000,
-        }),
-      });
-
-      // 检查HTTP状态
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('AI API HTTP error:', response.status, errorText);
-        setAiMessages(prev => [...prev, {
-          role: 'assistant',
-          content: `【黄师傅】天机暂隐，API异常（状态码: ${response.status}）。请稍后再试。`,
-          id: 'a_err_' + Date.now(),
-        }]);
-        return;
-      }
-
-      const data = await response.json();
-
-      // 检查API返回的错误
-      if (data.error) {
-        console.error('AI API error:', data.error);
-        setAiMessages(prev => [...prev, {
-          role: 'assistant',
-          content: `【黄师傅】天机暂隐，请稍后再试。（${data.error.message || '服务繁忙'}）`,
-          id: 'a_err_' + Date.now(),
-        }]);
-        return;
-      }
-
-      const content = data.choices?.[0]?.message?.content;
-      if (!content) {
-        console.error('AI API empty response:', data);
-        setAiMessages(prev => [...prev, {
-          role: 'assistant',
-          content: '【黄师傅】天机未明，返回为空。请换个问题再试。',
-          id: 'a_err_' + Date.now(),
-        }]);
-        return;
-      }
-
-      setAiMessages(prev => [...prev, {
-        role: 'assistant',
-        content,
-        id: 'a_' + Date.now(),
-      }]);
-    } catch (err) {
-      console.error('AI API fetch error:', err);
-      setAiMessages(prev => [...prev, {
-        role: 'assistant',
-        content: '【黄师傅】天机暂隐，网络异常。请检查网络连接后重试。',
-        id: 'a_err_' + Date.now(),
-      }]);
-    } finally {
-      setAiLoading(false);
-    }
+      },
+      { role: 'user', content: prompt },
+    ], {
+      onChunk: (delta) => {
+        full += delta;
+        setAiMessages(prev => prev.map(m => m.id === id ? { ...m, content: full } : m));
+      },
+      onDone: () => setAiLoading(false),
+      onError: (err) => {
+        setAiLoading(false);
+        setAiMessages(prev => prev.map(m => m.id === id ? { ...m, content: `【黄师傅】${err}。` } : m));
+      },
+    }, { maxTokens: 2000 });
   }, [aiInput, question, result]);
 
   function buildTaiYiPrompt(res: TaiYiResult, q: string): string {
-    return `[太乙神数 · 国运排盘]
+    try {
+      return `[太乙神数 · 国运排盘]
 
-${res.jiStyleName}：${res.year}年${res.month}月${res.day}日
+${res.jiStyleName || '年计'}：${res.year}年${res.month}月${res.day}日
 
-【太乙局数】${res.kookText} · ${res.sanCai}
-【阴阳遁】${res.dun}
-【太乙纪元】第${res.epoch.cycle}周期 · 第${res.epoch.epoch}纪 · ${res.epoch.epochName} · ${res.epoch.yuanName}
+【太乙局数】${res.kookText || '未知'} · ${res.sanCai || '未知'}
+【阴阳遁】${res.dun || '未知'}
+【太乙纪元】第${res.epoch?.cycle || '?'}周期 · 第${res.epoch?.epoch || '?'}纪 · ${res.epoch?.epochName || '?'} · ${res.epoch?.yuanName || '?'}
 
-【太乙所在】${GONG_NAME[res.taiYi.gong]}（${GONG_DIRECTION[res.taiYi.gong]}方）
-【文昌/天目】${res.skyEyes.god} · 落${GONG_NAME[res.skyEyes.gong]}
-【计神】${res.jiGod.zhi}位
-【始击/客目】${res.shiJi.zhi}位
+【太乙所在】${GONG_NAME[res.taiYi?.gong] || '?'}（${GONG_DIRECTION[res.taiYi?.gong] || '?'}方）
+【文昌/天目】${res.skyEyes?.god || '?'} · 落${GONG_NAME[res.skyEyes?.gong] || '?'}
+【计神】${res.jiGod?.zhi || '?'}位
+【始击/客目】${res.shiJi?.zhi || '?'}位
 
 【五将分布】
-- 太乙：${GONG_NAME[res.fiveGenerals.taiYi.gong]}
-- 主大将：${GONG_NAME[res.fiveGenerals.zhuDa.gong]}
-- 主参将：${GONG_NAME[res.fiveGenerals.zhuCan.gong]}
-- 客大将：${GONG_NAME[res.fiveGenerals.keDa.gong]}
-- 客参将：${GONG_NAME[res.fiveGenerals.keCan.gong]}
-- 定计将：${GONG_NAME[res.fiveGenerals.dingJi.gong]}
+- 太乙：${GONG_NAME[res.fiveGenerals?.taiYi?.gong] || '?'}
+- 主大将：${GONG_NAME[res.fiveGenerals?.zhuDa?.gong] || '?'}
+- 主参将：${GONG_NAME[res.fiveGenerals?.zhuCan?.gong] || '?'}
+- 客大将：${GONG_NAME[res.fiveGenerals?.keDa?.gong] || '?'}
+- 客参将：${GONG_NAME[res.fiveGenerals?.keCan?.gong] || '?'}
+- 定计将：${GONG_NAME[res.fiveGenerals?.dingJi?.gong] || '?'}
 
-【主客胜负】${res.zhuKe.outcome}
-${res.zhuKe.detail}
+【主客胜负】${res.zhuKe?.outcome || '未知'}
+${res.zhuKe?.detail || ''}
 
 【阳九百六】
-${res.yangJiuBaiLiu.yangJiuInfo}
-${res.yangJiuBaiLiu.baiLiuInfo}
-${res.yangJiuBaiLiu.warning}
+${res.yangJiuBaiLiu?.yangJiuInfo || ''}
+${res.yangJiuBaiLiu?.baiLiuInfo || ''}
+${res.yangJiuBaiLiu?.warning || ''}
 
 【吉凶格局】
-${res.patterns.map(p => `${p.level === '吉' ? '✦' : '✦'} [${p.level}]${p.name}：${p.description}`).join('\n')}
+${(res.patterns || []).map((p: any) => `✦ [${p.level}]${p.name}：${p.description}`).join('\n')}
 
-【二十八宿值日】${res.twentyEightStar}
+【二十八宿值日】${res.twentyEightStar || '未知'}
 
 【所问之事】${q}
 
 请黄师傅根据以上太乙神数排盘，详细分析此问。`;
+    } catch (e) {
+      return `[太乙神数排盘]\n\n排盘数据：${JSON.stringify(res, null, 2)}\n\n【所问之事】${q}\n\n请黄师傅根据以上太乙神数排盘，详细分析此问。`;
+    }
   }
 
   function copyText(text: string, id: string) {

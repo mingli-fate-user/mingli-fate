@@ -10,7 +10,7 @@ export default function CommunityHome() {
   const [selectedCategory, setSelectedCategory] = useState('全部');
   const [showIdentityModal, setShowIdentityModal] = useState(false);
   const [loading, setLoading] = useState(true);
-  const { user, isLoggedIn } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   // 加载帖子
@@ -78,10 +78,10 @@ export default function CommunityHome() {
           )}
           <div>
             <p className="text-slate-800 font-medium">{user?.nickname || user?.username || '访客'}</p>
-            <p className="text-xs text-slate-400">{isLoggedIn ? '已登录' : '未登录'}</p>
+            <p className="text-xs text-slate-400">{isAuthenticated ? '已登录' : '未登录'}</p>
           </div>
         </div>
-        {isLoggedIn ? (
+        {isAuthenticated ? (
           <Link to="/me" className="text-sm text-blue-600 hover:underline">
             个人中心
           </Link>

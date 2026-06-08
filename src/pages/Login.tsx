@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, register, isLoggedIn } = useAuth();
+  const { login, register, isAuthenticated } = useAuth();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -17,7 +17,7 @@ export default function Login() {
 
   const from = (location.state as any)?.from || '/me';
 
-  if (isLoggedIn) {
+  if (isAuthenticated) {
     navigate(from, { replace: true });
     return null;
   }

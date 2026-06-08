@@ -9,16 +9,19 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="黄师傅命理" />
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title>黄师傅 - 命理科普</title>
-    <!-- PWA -->
-    <link rel="manifest" href="/manifest.json" />
-    <link rel="apple-touch-icon" href="/icon-192.png" />
     <!-- Google Fonts: Noto Serif SC for Chinese serif/kaiti -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <!-- DNS 预解析 -->
     <link rel="dns-prefetch" href="//api.siliconflow.cn" />
+    <!-- 农历黄历库（真数据） -->
+    <script src="/lib/lunar.js"></script>
+    <!-- Vite entry -->
+    <script type="module" src="/src/main.tsx"></script>
   </head>
   <body>
     <div id="root">
@@ -57,33 +60,5 @@
         <div class="skeleton-text">加载中...</div>
       </div>
     </div>
-    <script type="module" src="/src/main.tsx"></script>
-    <script>
-      // 注册Service Worker（PWA）
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').then((reg) => {
-            reg.update();
-          }).catch(() => {});
-        });
-      }
-      // 加载超时兜底
-      setTimeout(function() {
-        var sk = document.getElementById('skeleton-root');
-        if (sk && document.body.contains(sk)) {
-          if ('caches' in window) {
-            caches.keys().then(function(names) {
-              return Promise.all(names.map(function(n){ return caches.delete(n); }));
-            }).then(function() {
-              location.reload(true);
-            }).catch(function() {
-              location.reload(true);
-            });
-          } else {
-            location.reload(true);
-          }
-        }
-      }, 8000);
-    </script>
   </body>
 </html>

@@ -1,6 +1,8 @@
-// API 配置
-// Render 后端地址
-export const API_BASE_URL = "https://mingli-fate.onrender.com";
+// 纯前端配置 - 无需后端API地址
+export const API_BASE_URL = "";
 
-// tRPC endpoint
-export const TRPC_URL = `${API_BASE_URL}/api/trpc`;
+// 黄师傅默认API密钥
+export const DEFAULT_API_KEY = "sk-exbzhkddusywrlknvkgdzcgjraluipqxhvquzeuwbyekdikl";
+
+// 硅基流动API地址
+export const SILICONFLOW_API = "https://api.siliconflow.cn/v1/chat/completions";

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { streamSiliconAPI } from '@/utils/apiClient';
 import {
   Sparkles, ArrowRight, RotateCw, Save, Loader2,
   Compass, Mountain, Navigation, Star,
@@ -16,7 +17,6 @@ import {
 import { NO_MARKDOWN_RULE } from '@/utils/aiTextUtils';
 import { Link, useSearchParams } from 'react-router-dom';
 
-const API_KEY_PARTS = ['sk-exbzhkdd', 'usywrlknvkg', 'dzcgjraluip', 'qxhvquzeuw', 'byekdikl'];
 
 export default function XuanKongTool() {
   const [searchParams] = useSearchParams();
@@ -76,28 +76,25 @@ export default function XuanKongTool() {
     }, 500);
   }, [year, zuoShan, xiang]);
 
-  // AI解析
-  const handleAI = useCallback(async () => {
+  // AI解析（流式输出）
+  const handleAI = useCallback(() => {
     const q = aiInput.trim() || question.trim();
-    if (!q) return;
+    if (!q || !result) return;
 
     setAiLoading(true);
     setAiMessages(prev => [...prev, { role: 'user', content: q, id: 'u_' + Date.now() }]);
     setAiInput('');
 
-    try {
-      const apiKey = API_KEY_PARTS.join('');
-      const prompt = buildPrompt(result!, importedLayout, q);
+    const id = 'a_' + Date.now();
+    setAiMessages(prev => [...prev, { role: 'assistant', content: '', id }]);
 
-      const resp = await fetch('https://api.siliconflow.cn/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-        body: JSON.stringify({
-          model: 'deepseek-ai/DeepSeek-V4-Flash',
-          messages: [
-            {
-              role: 'system',
-              content: `你是黄师傅，精通玄空飞星风水学的命理大师。
+    const prompt = buildPrompt(result, importedLayout, q);
+    let full = '';
+
+    streamSiliconAPI([
+      {
+        role: 'system',
+        content: `你是黄师傅，精通玄空飞星风水学的命理大师。
 
 【身份定位】
 你专研无常派玄空飞星风水学，以三元九运、二十四山、挨星下卦为核心技法。
@@ -111,31 +108,19 @@ export default function XuanKongTool() {
 
 【语言风格】
 半文半白的古典风水术语，引用《青囊奥语》《天玉经》《都天宝照经》等古籍，铁口直断。严禁使用任何markdown格式符号（#和*），所有输出必须是纯文本。` + NO_MARKDOWN_RULE + ` `,
-            },
-            { role: 'user', content: prompt },
-          ],
-          temperature: 0.7,
-          max_tokens: 2000,
-        }),
-      });
-
-      const data = await resp.json();
-      const content = data.choices?.[0]?.message?.content || '解析失败';
-
-      setAiMessages(prev => [...prev, {
-        role: 'assistant',
-        content,
-        id: 'a_' + Date.now(),
-      }]);
-    } catch {
-      setAiMessages(prev => [...prev, {
-        role: 'assistant',
-        content: '【黄师傅】天机暂隐，请稍后再试。',
-        id: 'a_err_' + Date.now(),
-      }]);
-    } finally {
-      setAiLoading(false);
-    }
+      },
+      { role: 'user', content: prompt },
+    ], {
+      onChunk: (delta) => {
+        full += delta;
+        setAiMessages(prev => prev.map(m => m.id === id ? { ...m, content: full } : m));
+      },
+      onDone: () => setAiLoading(false),
+      onError: (err) => {
+        setAiLoading(false);
+        setAiMessages(prev => prev.map(m => m.id === id ? { ...m, content: `【黄师傅】${err}。` } : m));
+      },
+    }, { maxTokens: 2000 });
   }, [aiInput, result, importedLayout, question]);
 
   function buildPrompt(res: XuanKongResult, layout: HouseLayout | null, q: string): string {

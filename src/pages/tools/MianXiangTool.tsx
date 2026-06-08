@@ -1,9 +1,9 @@
 import { useState, useRef } from 'react';
+import { streamSiliconAPI } from '@/utils/apiClient';
 import { Upload, Camera, Sparkles, X, Copy, Check, Loader2, User, AlertCircle, Scan, UserCircle } from 'lucide-react';
 import { MIANXIANG_SYSTEM_PROMPT } from '@/data/mianxiangPrompt';
 import SaveRecordButton from '@/components/SaveRecordButton';
 
-const API_KEY_PARTS = ['sk-exbzhkdd', 'usywrlknvkg', 'dzcgjraluip', 'qxhvquzeuw', 'byekdikl'];
 const VISION_MODEL = 'Qwen/Qwen3.5-9B';
 
 type AnalysisMode = 'full' | 'quick';
@@ -101,112 +101,54 @@ export default function MianXiangTool() {
       });
     }, 500);
 
-    try {
-      // 构建消息内容
-      const content: any[] = [];
-      for (const key of requiredKeys as string[]) {
-        const imgData = photos[key].preview;
-        if (imgData) {
-          content.push({ type: 'image_url', image_url: { url: imgData } });
-        }
+    // 构建消息内容
+    const content: any[] = [];
+    for (const key of requiredKeys as string[]) {
+      const imgData = photos[key].preview;
+      if (imgData) {
+        content.push({ type: 'image_url', image_url: { url: imgData } });
       }
-
-      // 根据模式构建不同的用户提示词
-      let userText = '';
-      if (mode === 'full') {
-        userText = '请根据这三张照片（第一张正脸、第二张侧脸、第三张头顶），按照苏民峰面相学体系进行详细的面相分析。';
-      } else {
-        userText = '请根据这张正脸照片，用快速识人法分析这个人的性格和为人。三段话概括：第一眼印象、性格特点、打交道建议。';
-      }
-      content.push({ type: 'text', text: userText });
-
-      const systemPrompt = mode === 'full' ? MIANXIANG_SYSTEM_PROMPT : QUICK_SYSTEM_PROMPT;
-
-      const messages = [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content },
-      ];
-
-      const resp = await fetch('https://api.siliconflow.cn/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${API_KEY_PARTS.join('')}`,
-        },
-        body: JSON.stringify({
-          model: VISION_MODEL,
-          messages,
-          max_tokens: mode === 'full' ? 3000 : 1500,
-          temperature: 0.7,
-          stream: true,
-        }),
-      });
-
-      if (!resp.ok) {
-        const errText = await resp.text();
-        throw new Error(`API错误 (${resp.status}): ${errText.slice(0, 200)}`);
-      }
-
-      const reader = resp.body?.getReader();
-      if (!reader) throw new Error('无法读取响应');
-
-      const decoder = new TextDecoder();
-      let full = '';
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed || !trimmed.startsWith('data:')) continue;
-          const dataStr = trimmed.slice(5).trim();
-          if (dataStr === '[DONE]') break;
-          try {
-            const json = JSON.parse(dataStr);
-            const delta = json.choices?.[0]?.delta?.content || '';
-            if (delta) {
-              full += delta;
-              setAiMessages(prev => prev.map(m => m.id === id ? { ...m, content: full } : m));
-            }
-          } catch { /* */ }
-        }
-      }
-
-      // 处理剩余buffer
-      if (buffer.trim()) {
-        const trimmed = buffer.trim();
-        if (trimmed.startsWith('data:')) {
-          const dataStr = trimmed.slice(5).trim();
-          if (dataStr !== '[DONE]') {
-            try {
-              const json = JSON.parse(dataStr);
-              const delta = json.choices?.[0]?.delta?.content || '';
-              if (delta) {
-                full += delta;
-                setAiMessages(prev => prev.map(m => m.id === id ? { ...m, content: full } : m));
-              }
-            } catch { /* */ }
-          }
-        }
-      }
-    } catch (e: any) {
-      console.error('面相AI解析错误:', e);
-      setAiError(e.message || '请求失败');
-      setAiMessages(prev => prev.map(m =>
-        m.role === 'assistant' && m.content === ''
-          ? { ...m, content: `抱歉，解析出错了：${e.message || '请检查网络后重试'}。` } : m
-      ));
     }
-    clearInterval(progressTimer);
-    setProgress(100);
-    setTimeout(() => setProgress(0), 1000);
-    setAiLoading(false);
+
+    // 根据模式构建不同的用户提示词
+    let userText = '';
+    if (mode === 'full') {
+      userText = '请根据这三张照片（第一张正脸、第二张侧脸、第三张头顶），按照苏民峰面相学体系进行详细的面相分析。';
+    } else {
+      userText = '请根据这张正脸照片，用快速识人法分析这个人的性格和为人。三段话概括：第一眼印象、性格特点、打交道建议。';
+    }
+    content.push({ type: 'text', text: userText });
+
+    const systemPrompt = mode === 'full' ? MIANXIANG_SYSTEM_PROMPT : QUICK_SYSTEM_PROMPT;
+
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content },
+    ];
+
+    let full = '';
+    streamSiliconAPI(messages, {
+      onChunk: (delta) => {
+        full += delta;
+        setAiMessages(prev => prev.map(m => m.id === id ? { ...m, content: full } : m));
+      },
+      onDone: () => {
+        clearInterval(progressTimer);
+        setProgress(100);
+        setTimeout(() => { setProgress(0); setAiLoading(false); }, 800);
+      },
+      onError: (err) => {
+        clearInterval(progressTimer);
+        setProgress(0);
+        setAiLoading(false);
+        console.error('面相AI解析错误:', err);
+        setAiError(err);
+        setAiMessages(prev => prev.map(m =>
+          m.role === 'assistant' && m.id === id
+            ? { ...m, content: `抱歉，解析出错了：${err}。` } : m
+        ));
+      },
+    }, { model: VISION_MODEL, maxTokens: mode === 'full' ? 3000 : 1500 });
   }
 
   async function copyText(text: string, id: string) {

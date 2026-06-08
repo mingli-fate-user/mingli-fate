@@ -1,121 +1,92 @@
-import { trpc } from "@/providers/trpc";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router";
-import { LOGIN_PATH } from "@/const";
+import { useState, useCallback, useMemo, useEffect } from "react";
 
-type UseAuthOptions = {
-  redirectOnUnauthenticated?: boolean;
-  redirectPath?: string;
-};
+// 本地用户存储
+const USERS_KEY = "mingli_users";
+const AUTH_TOKEN_KEY = "auth_token";
+const CURRENT_USER_KEY = "current_user";
 
-export function useAuth(options?: UseAuthOptions) {
-  const { redirectOnUnauthenticated = false, redirectPath = LOGIN_PATH } =
-    options ?? {};
+function hashPassword(password: string): string {
+  let hash = 0;
+  for (let i = 0; i < password.length; i++) {
+    const char = password.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char + 0x9e3779b9;
+    hash |= 0;
+  }
+  return hash.toString(16) + "_" + password.length;
+}
 
-  const navigate = useNavigate();
-  const utils = trpc.useUtils();
-  const [localToken, setLocalToken] = useState<string | null>(
-    localStorage.getItem("auth_token")
-  );
+function getUsers(): Record<string, { passwordHash: string; nickname: string; createdAt: string }> {
+  try {
+    return JSON.parse(localStorage.getItem(USERS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
 
-  // 本地JWT登录
-  const loginMutation = trpc.user.login.useMutation({
-    onSuccess: (data) => {
-      localStorage.setItem("auth_token", data.token);
-      setLocalToken(data.token);
-      // 刷新用户信息
-      utils.user.me.invalidate();
-    },
+function saveUsers(users: Record<string, any>) {
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+}
+
+export function useAuth() {
+  const [user, setUser] = useState<{ username: string; nickname: string } | null>(() => {
+    try {
+      return JSON.parse(localStorage.getItem(CURRENT_USER_KEY) || "null");
+    } catch {
+      return null;
+    }
   });
 
-  // 本地JWT注册
-  const registerMutation = trpc.user.register.useMutation({
-    onSuccess: (data) => {
-      localStorage.setItem("auth_token", data.token);
-      setLocalToken(data.token);
-      utils.user.me.invalidate();
-    },
-  });
+  const [isLoading, setIsLoading] = useState(false);
 
-  // 获取当前用户信息（优先本地JWT）
-  const {
-    data: user,
-    isLoading,
-    error,
-    refetch,
-  } = trpc.user.me.useQuery(undefined, {
-    staleTime: 1000 * 60 * 5,
-    retry: false,
-    enabled: !!localToken,
-  });
+  const login = useCallback(async (data: { username: string; password: string }) => {
+    const users = getUsers();
+    const u = users[data.username];
+    if (!u) throw new Error("用户名不存在");
+    if (u.passwordHash !== hashPassword(data.password)) throw new Error("密码错误");
 
-  // OAuth登出
-  const logoutMutation = trpc.auth.logout.useMutation({
-    onSuccess: async () => {
-      await utils.invalidate();
-    },
-  });
+    const userInfo = { username: data.username, nickname: u.nickname };
+    localStorage.setItem(AUTH_TOKEN_KEY, "local_" + data.username);
+    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(userInfo));
+    setUser(userInfo);
+    return { token: "local_" + data.username };
+  }, []);
+
+  const register = useCallback(async (data: { username: string; password: string; nickname?: string }) => {
+    const users = getUsers();
+    if (users[data.username]) throw new Error("用户名已存在");
+
+    users[data.username] = {
+      passwordHash: hashPassword(data.password),
+      nickname: data.nickname || data.username,
+      createdAt: new Date().toISOString(),
+    };
+    saveUsers(users);
+
+    const userInfo = { username: data.username, nickname: data.nickname || data.username };
+    localStorage.setItem(AUTH_TOKEN_KEY, "local_" + data.username);
+    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(userInfo));
+    setUser(userInfo);
+    return { token: "local_" + data.username };
+  }, []);
 
   const logout = useCallback(() => {
-    // 清除本地token
-    localStorage.removeItem("auth_token");
-    setLocalToken(null);
-    // 同时调用OAuth logout
-    logoutMutation.mutate();
-    // 刷新页面
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    localStorage.removeItem(CURRENT_USER_KEY);
+    setUser(null);
     window.location.reload();
-  }, [logoutMutation]);
-
-  const login = useCallback(
-    async (data: { username: string; password: string }) => {
-      return loginMutation.mutateAsync(data);
-    },
-    [loginMutation]
-  );
-
-  const register = useCallback(
-    async (data: {
-      username: string;
-      password: string;
-      nickname?: string;
-    }) => {
-      return registerMutation.mutateAsync(data);
-    },
-    [registerMutation]
-  );
-
-  useEffect(() => {
-    if (redirectOnUnauthenticated && !isLoading && !user && !localToken) {
-      const currentPath = window.location.pathname;
-      if (currentPath !== redirectPath) {
-        navigate(redirectPath);
-      }
-    }
-  }, [redirectOnUnauthenticated, isLoading, user, localToken, navigate, redirectPath]);
+  }, []);
 
   return useMemo(
     () => ({
-      user: user ?? null,
-      isAuthenticated: !!user || !!localToken,
-      isLoading: isLoading || loginMutation.isPending || registerMutation.isPending,
-      error,
-      login,
-      register,
-      logout,
-      refresh: refetch,
-      token: localToken,
-    }),
-    [
       user,
+      isAuthenticated: !!user,
       isLoading,
-      loginMutation.isPending,
-      registerMutation.isPending,
-      error,
       login,
       register,
       logout,
-      refetch,
-      localToken,
-    ]
+      refresh: () => {},
+      token: localStorage.getItem(AUTH_TOKEN_KEY),
+    }),
+    [user, isLoading, login, register, logout]
   );
 }

@@ -1,29 +1,11 @@
-// Service Worker - 清理所有旧缓存并停用
-const CACHE_KILL = 'mingli-kill-v2';
-
-// 安装时：清理所有旧缓存
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((name) => caches.delete(name))
-      );
-    }).then(() => self.skipWaiting())
-  );
+// Service Worker - 完全禁用，只清理缓存
+self.addEventListener('install', function(e) {
+  self.skipWaiting();
+  e.waitUntil(caches.keys().then(function(names) {
+    return Promise.all(names.map(function(n){ return caches.delete(n); }));
+  }));
 });
-
-// 激活时：立即接管所有客户端
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((name) => caches.delete(name))
-      );
-    }).then(() => self.clients.claim())
-  );
+self.addEventListener('activate', function(e) {
+  e.waitUntil(self.clients.claim());
 });
-
-// 不再拦截任何请求 - 透传给网络
-self.addEventListener('fetch', () => {
-  // pass-through - 不缓存不拦截
-});
+// 不拦截任何请求

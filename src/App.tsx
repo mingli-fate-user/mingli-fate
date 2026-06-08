@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { AuthGuard } from '@/components/AuthGuard';
+import ApiKeyPrompt from '@/components/ApiKeyPrompt';
 import Home from '@/pages/Home';
 import { facePages, ziweiPages, liuyaoPages, xiaoliurenPages } from '@/data/siteData';
 import ContentPage from '@/pages/ContentPage';
@@ -30,12 +31,14 @@ const FengShuiDesigner = lazy(() => import('@/pages/tools/FengShuiDesigner'));
 const XuanKongTool = lazy(() => import('@/pages/tools/XuanKongTool'));
 const QiMenDiLiTool = lazy(() => import('@/pages/tools/QiMenDiLiTool'));
 const DaLiuRenTool = lazy(() => import('@/pages/tools/DaLiuRenTool'));
+const QiZhengTool = lazy(() => import('@/pages/tools/QiZhengTool'));
 const CommunityHome = lazy(() => import('@/pages/community/CommunityHome'));
 const PostDetail = lazy(() => import('@/pages/community/PostDetail'));
 const NewPost = lazy(() => import('@/pages/community/NewPost'));
 const UserProfile = lazy(() => import('@/pages/community/UserProfile'));
 const Login = lazy(() => import('@/pages/Login'));
-const ApiKeyManage = lazy(() => import('@/pages/ApiKeyManage'));
+const TongSheng = lazy(() => import('@/pages/TongSheng'));
+
 
 function FacePages() {
   return <ContentPage pages={facePages} basePath="/face" category="面相篇" />;
@@ -63,6 +66,7 @@ function PageLoader() {
 export default function App() {
   return (
     <Layout>
+      <ApiKeyPrompt />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Home />} />
@@ -91,10 +95,7 @@ export default function App() {
           <Route path="/study" element={<StudyZone />} />
           <Route path="/bookshelf" element={<Bookshelf />} />
 
-          {/* API Key 管理 - 需要登录 */}
-          <Route path="/apikey" element={<AuthGuard><ApiKeyManage /></AuthGuard>} />
-
-          {/* Personal Page - 需要登录 */}
+          {/* Personal Page - 需要登录（包含排盘记录 + AI密钥设置） */}
           <Route path="/me" element={<AuthGuard><PersonalPage /></AuthGuard>} />
 
           {/* Tools - 列表可浏览，具体工具需登录 */}
@@ -114,7 +115,9 @@ export default function App() {
           <Route path="/tools/fengshui" element={<AuthGuard><FengShuiDesigner /></AuthGuard>} />
           <Route path="/tools/xuankong" element={<AuthGuard><XuanKongTool /></AuthGuard>} />
           <Route path="/tools/daliuren" element={<AuthGuard><DaLiuRenTool /></AuthGuard>} />
+          <Route path="/tools/qizheng" element={<AuthGuard><QiZhengTool /></AuthGuard>} />
           <Route path="/tools/qimendifa" element={<AuthGuard><QiMenDiLiTool /></AuthGuard>} />
+          <Route path="/tools/tongsheng" element={<TongSheng />} />
 
           {/* Community - 浏览不需要登录，发帖/管理需要 */}
           <Route path="/community" element={<CommunityHome />} />

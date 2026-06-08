@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { streamSiliconAPI } from '@/utils/apiClient';
 import { Sparkles, Send, X, Copy, Check, Loader2, RotateCcw } from 'lucide-react';
 import SaveRecordButton from '@/components/SaveRecordButton';
 import HighlightText from '@/components/HighlightText';
@@ -22,7 +23,6 @@ function loadGuaData(): Record<string, GuaData> {
   return YI_JING_64 as Record<string, GuaData>;
 }
 
-const API_KEY_PARTS = ['sk-exbzhkdd', 'usywrlknvkg', 'dzcgjraluip', 'qxhvquzeuw', 'byekdikl'];
 
 // 六爻图形
 function GuaXiang({ yao }: { yao: boolean[] }) {
@@ -78,30 +78,14 @@ export default function JinQianGuaTool() {
     return `[卜问之事]\n${question}\n\n[所得之卦]\n第${g.num}卦：${g.name}\n\n[卦辞]\n${g.guaCi}\n\n[爻辞]${yaoText}\n\n[天机道]\n${g.tianJiDao}\n\n[人间道]\n${g.renJianDao}\n\n请按以下步骤解卦：\n\n第一步：定位问题。分析顾客所问之事，对应六爻中哪一爻最相关。引用该爻爻辞原文说明。\n\n第二步：看事态走向。从定位之爻出发，看下一爻变化，引用下一爻爻辞。\n\n第三步：结合人间道分析。从人事角度具体分析。\n\n第四步：结合天机道分析。从天道规律角度揭示天机。\n\n第五步：给出建议。综合以上，给出行之有效的建议，末句加勉励。\n\n风格：半文半白，铁口直断，每步之间空一行，引用爻辞标注原文。`;
   }
 
-  async function streamChat(messages: { role: string; content: string }[], onChunk: (t: string) => void) {
+  function streamChat(messages: { role: string; content: string }[], onChunk: (t: string) => void) {
     setAiLoading(true);
-    try {
-      const resp = await fetch('https://api.siliconflow.cn/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY_PARTS.join('')}` },
-        body: JSON.stringify({ model: 'deepseek-ai/DeepSeek-V4-Flash', messages, max_tokens: 2000, temperature: 0.7, stream: true }),
-      });
-      const reader = resp.body?.getReader();
-      if (!reader) return;
-      const decoder = new TextDecoder(); let full = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const lines = decoder.decode(value, { stream: true }).split('\n');
-        for (const line of lines) {
-          if (!line.startsWith('data:')) continue;
-          const d = line.slice(5).trim();
-          if (d === '[DONE]') break;
-          try { const j = JSON.parse(d); const c = j.choices?.[0]?.delta?.content || ''; if (c) { full += c; onChunk(full); } } catch { /* */ }
-        }
-      }
-    } catch { /* */ }
-    setAiLoading(false);
+    let full = '';
+    streamSiliconAPI(messages, {
+      onChunk: (delta) => { full += delta; onChunk(full); },
+      onDone: () => setAiLoading(false),
+      onError: () => setAiLoading(false),
+    });
   }
 
   const askAI = useCallback(async () => {

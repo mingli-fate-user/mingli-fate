@@ -116,7 +116,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-2">
               {isAuthenticated ? (
                 <div className="hidden lg:flex items-center gap-2">
-                  <Link to="/apikey" className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all text-sm ${
+                  <Link to="/me" className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all text-sm ${
                     isToolPage ? `${toolColor.navText} hover:${toolColor.navTextActive} hover:bg-white/10` : 'text-white/60 hover:text-white hover:bg-white/10'
                   }`} title="AI解析设置">
                     <Key className={`w-3.5 h-3.5 ${isToolPage ? toolColor.iconColor : 'text-white'}`} />

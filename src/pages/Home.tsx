@@ -44,8 +44,8 @@ const specialtyTags = [
 ];
 
 export default function Home() {
-  const { isLoggedIn } = useAuth();
-  const [showBanner, setShowBanner] = useState(!isLoggedIn);
+  const { isAuthenticated } = useAuth();
+  const [showBanner, setShowBanner] = useState(!isAuthenticated);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
@@ -53,7 +53,7 @@ export default function Home() {
   return (
     <div className={`transition-opacity duration-700 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
       {/* Login Banner */}
-      {showBanner && !isLoggedIn && (
+      {showBanner && !isAuthenticated && (
         <div className="bg-blue-500/10 backdrop-blur-md border-b border-blue-400/20 px-4 py-3 animate-fade-in">
           <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 text-sm">
@@ -182,7 +182,7 @@ export default function Home() {
       </section>
 
       {/* Login CTA */}
-      {!isLoggedIn && (
+      {!isAuthenticated && (
         <section className="px-4 sm:px-6 py-16">
           <div className="max-w-6xl mx-auto text-center">
             <div className="bg-white/10 backdrop-blur-md border border-blue-400/20 p-10 sm:p-14 space-y-6 animate-fade-in"

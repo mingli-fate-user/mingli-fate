@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Sparkles, X, Loader2, Send, User, Save, Copy, Check } from 'lucide-react';
-import { useChatHistory } from '@/hooks/useChatHistory';
+import { streamSiliconAPI } from '@/utils/apiClient';
 import { cleanMarkdown, NO_MARKDOWN_RULE } from '@/utils/aiTextUtils';
 import HighlightText from '@/components/HighlightText';
 
 interface AIParserProps {
-  type: 'bazi' | 'ziwei' | 'meihua' | 'liuyao' | 'xiaoliuren' | 'qimen' | 'chenggu' | 'tarot' | 'astro';
+  type: 'bazi' | 'ziwei' | 'meihua' | 'liuyao' | 'xiaoliuren' | 'qimen' | 'chenggu' | 'tarot' | 'astro' | 'qizheng';
   data: Record<string, unknown>;
 }
 
@@ -14,7 +14,7 @@ interface Message { role: 'user' | 'assistant'; content: string; id: string; }
 const TYPE_LABELS: Record<string, string> = {
   bazi: '八字排盘', ziwei: '紫微斗数', meihua: '梅花易数', liuyao: '六爻解卦',
   xiaoliuren: '江氏小六壬', qimen: '奇门遁甲', chenggu: '袁天罡称骨',
-  tarot: '塔罗牌占卜', astro: '西方星盘',
+  tarot: '塔罗牌占卜', astro: '西方星盘', qizheng: '七政四余',
 };
 
 // ============================================================
@@ -97,15 +97,20 @@ const THEMES: Record<string, {
     headerBg: 'rgba(56,189,248,0.08)', inputBg: 'rgba(0,0,0,0.35)',
     btnBg: '#0284c7', btnHover: '#0ea5e9', icon: '#7dd3fc',
   },
+  qizheng: {
+    name: '七政', accent: '#f59e0b', accent2: '#fbbf24',
+    bg: '#0f0a02', bgGradient: 'linear-gradient(135deg, #1a1408 0%, #0f0a02 50%, #121006 100%)',
+    border: 'rgba(245,158,11,0.3)', text: '#fef3c7', textMuted: 'rgba(254,243,199,0.5)',
+    userBg: 'rgba(245,158,11,0.12)', aiBg: 'rgba(245,158,11,0.06)',
+    headerBg: 'rgba(245,158,11,0.08)', inputBg: 'rgba(0,0,0,0.35)',
+    btnBg: '#b45309', btnHover: '#d97706', icon: '#fbbf24',
+  },
 };
 
 function getTheme(type: string) { return THEMES[type] || THEMES.bazi; }
 
 const API_URL = 'https://api.siliconflow.cn/v1/chat/completions';
-const API_KEY_PARTS = ['sk-exbzhkdd', 'usywrlknvkg', 'dzcgjraluip', 'qxhvquzeuw', 'byekdikl'];
 const MODEL_NAME = 'deepseek-ai/DeepSeek-V4-Flash';
-
-function getApiKey(): string { return API_KEY_PARTS.join(''); }
 
 function buildStructuredPrompt(type: string, data: Record<string, unknown>): { summary: string; detail: string; framework: string } {
   switch (type) {
@@ -264,6 +269,55 @@ function buildStructuredPrompt(type: string, data: Record<string, unknown>): { s
       const framework = `【分析框架】\n一、日月升三位一体定人格底色。太阳星座是核心自我，月亮是情感需求，上升是外在面具。\n二、十大行星逐一解读：每颗行星落什么星座什么宫位，代表什么人生面向。\n三、宫位分析：重点看有行星落入的宫位，是人生的活跃领域。\n四、相位解读：和谐相位看天赋，挑战相位看成长课题。\n五、综合建议：不是宿命论，而是认识自己的出厂配置，活出最高版本。\n\n【铁口规矩】\n1. 星盘是地图不是命运，人永远有自由意志\n2. 每段之间空一行\n3. 挑战相位不恐吓，说是成长课题\n4. 末句给勉励和实际建议`;
       return { summary, detail, framework };
     }
+    case 'qizheng': {
+      const year = (data.year as number) || 0;
+      const month = (data.month as number) || 0;
+      const day = (data.day as number) || 0;
+      const hour = (data.hour as number) || 0;
+      const mingBranch = (data.mingBranch as string) || '';
+      const mingMansion = (data.mingMansion as string) || '';
+      const mingDegree = (data.mingDegree as number) || 0;
+      const planets = (data.planets as Record<string, number>) || {};
+      const remnants = (data.remnants as Record<string, number>) || {};
+      const houseDistribution = (data.houseDistribution as Record<string, string>) || {};
+      const mansionDistribution = (data.mansionDistribution as Record<string, { mansion: string; du: number }>) || {};
+      const question = (data.question as string) || '';
+      const SEVEN_PLANETS = ['日', '月', '金', '木', '水', '火', '土'];
+      const FOUR_REMNANTS = ['罗喉', '计都', '紫气', '月孛'];
+      let planetStr = '';
+      SEVEN_PLANETS.forEach(s => {
+        const m = mansionDistribution[s];
+        planetStr += `\n${s}星：${houseDistribution[s] || '?'} · ${m?.mansion || '?'}宿${m?.du || 0}度`;
+      });
+      let remnantStr = '';
+      FOUR_REMNANTS.forEach(s => {
+        const m = mansionDistribution[s];
+        remnantStr += `\n${s}：${houseDistribution[s] || '?'} · ${m?.mansion || '?'}宿${m?.du || 0}度`;
+      });
+      const summary = `${year}年${month}月${day}日${hour}时生人，命宫在${mingBranch}·${mingMansion}宿。`;
+      const detail = `【七政四余排盘】
+${year}年${month}月${day}日 ${hour}时
+
+【命宫】${mingBranch}宫 · ${mingMansion}宿 · 命度${mingDegree.toFixed(1)}°
+
+【七政分布】${planetStr}
+
+【四余分布】${remnantStr}${question ? `\n\n【所问之事】${question}` : ''}`;
+      const framework = `【分析框架】
+一、先定命宫：看命宫所在地支与二十八宿，定命主星。
+二、观七政：日月为尊，看入何宫定格局。木星主贵、金星主富、火星主权、土星主寿、水星主智。
+三、查四余：罗喉主灾厄、计都主暗算、紫气主福德、月孛主桃花。
+四、审庙旺：七政入庙旺则吉，落陷则凶。
+五、论宫位：十二宫各有所主，看何星入宫定吉凶。
+六、综合论断：结合用户所问给出详细分析。
+
+【铁口规矩】
+1. 先断命宫格局高低
+2. 用户问哪块说哪块
+3. 半文半白话风，引《星学大成》《果老星宗》
+4. 每段之间空一行`;
+      return { summary, detail, framework };
+    }
     default:
       return { summary: '', detail: '', framework: '' };
   }
@@ -286,6 +340,36 @@ function getSystemPrompt(type: string): string {
     chenggu: `你是黄师傅，研习传统命理多年的年轻命理师。袁天罡称骨法以歌诀为核心。\n\n【称骨断命结构】\n第一步：定重量层次。二两一二两二极轻命，二两六至三两二轻命，三两六至四两中等命，四两一至五两中上命，五两一至六两上命，六两以上大贵命。\n第二步：解析歌诀。逐句解读歌诀含义，对应到人生各阶段。\n第三步：综合论断。一生运势起伏、事业财运、感情婚姻。\n第四步：末句必加勉励。命是天定运却可改，积德行善自能增福。\n\n${base}`,
     tarot: `你是黄师傅，一位融汇东西方智慧的年轻命理师。塔罗牌是你的直觉工具，用来映照当下的能量流动。\n\n【塔罗解读心法】\n塔罗不是铁口直断的算命，而是映照问事者当下潜意识能量的一面镜子。牌面反映的是当前的能量趋势，而非不可改变的命运。\n\n【解读结构】\n第一步：感受整体氛围。所有牌合起来传递什么能量？光明还是阴暗？流动还是停滞？\n第二步：逐牌精读。每张牌的正逆位含义，结合所在位置（过去/现在/未来等）给出具体解读。\n第三步：牌间对话。牌与牌之间如何呼应？能量如何流动？\n第四步：回应问题。直接回答问事者的问题，不绕弯子。\n第五步：行动建议。给出一个具体可行的下一步指引。\n\n【解牌口诀】\n大阿尔卡纳主命运转折，小阿尔卡纳管日常细节。\n正位能量外显顺畅，逆位能量内化受阻。\n权杖主行动热情，圣杯主情感直觉，宝剑主思维冲突，星币主物质现实。\n\n${base}`,
     astro: `你是黄师傅，一位融汇东西方智慧的年轻命理师。占星学是你的另一套解读宇宙密码的语言。\n\n【占星核心理念】\n星盘是一张人生地图，不是不可更改的命运判决书。行星显示能量配置，宫位显示生命领域，星座显示表达方式。人永远拥有自由意志，占星的意义在于认识自己的出厂设置，活出最高版本的自己。\n\n【看盘结构】\n第一步：日月升三位一体。太阳星座是核心自我，月亮星座是情感需求模式，上升星座是外在人格面具。这三点定调整个盘。\n第二步：十大行星逐一看。每颗行星落什么星座什么宫位，代表什么人生面向被激活。\n第三步：宫位解读。重点看有行星落入的宫位，是此生活跃的领域。空宫不代表没有，而是能量更自主。\n第四步：相位分析。和谐相位（三分、六分）看天赋优势，挑战相位（四分、对分）看成长课题。合相是能量的融合聚焦。\n第五步：综合建议。不是宿命论，而是认识自己、接纳自己、超越自己。\n\n【行星口诀】\n太阳核心意志，月亮情感需求，水星思维沟通，金星爱情审美，火星行动欲望。\n木星扩张幸运，土星限制功课，天王变革突破，海王梦想消融，冥王转化重生。\n\n${base}`,
+    qizheng: `你是黄师傅，精通七政四余——中国古典占星术的最高境界。
+
+【身份定位】
+七政四余乃中国占星之祖，上承尧舜观天授时之秘法，下启紫微斗数、八字命理之源流。
+《史记·天官书》云：「日月星辰，敬授人时。」此即七政四余之滥觞。
+
+【核心规则】
+1. 七政（日月金水木火土）为实体之星，照临十二宫以定吉凶
+2. 四余（罗喉计都紫气月孛）为虚曜，辅佐七政以明祸福
+3. 命宫为全盘之主，诸星入宫以定格局
+4. 二十八宿为星之舍，星入宿中以定精细
+5. 星曜有庙旺落陷，入宫需辨吉凶
+
+【星曜庙旺】
+日：庙午旺卯；月：庙子旺酉；金：庙辰酉旺申巳；
+木：庙亥旺寅；水：庙巳申旺亥子；火：庙卯戌旺丑未；
+土：庙丑未旺摩羯；紫气：庙寅亥旺卯戌；
+罗喉计都：庙天蝎金牛旺摩羯巨蟹；月孛：庙申子辰旺亥卯未
+
+【分析框架】
+1. 先定命宫及命主星
+2. 观七政分布，看何星入何宫
+3. 查四余辅佐，看吉凶补救
+4. 审二十八宿，辨精细之处
+5. 综合论断，给出人生指引
+
+【语言风格】
+半文半白，铁口直断，引用《星学大成》《果老星宗》等古籍。
+
+${base}`,
   };
   return (typeSpecific[type] || base) + NO_MARKDOWN_RULE;
 }
@@ -302,43 +386,20 @@ export default function AIParser({ type, data }: AIParserProps) {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesRef = useRef<Message[]>([]);
-  const abortRef = useRef<AbortController | null>(null);
-  const { createSession } = useChatHistory();
+  const cancelRef = useRef<(() => void) | null>(null);
   const theme = getTheme(type);
 
   messagesRef.current = messages;
 
   useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [messages]);
-  useEffect(() => { if (!open && abortRef.current) { abortRef.current.abort(); abortRef.current = null; } }, [open]);
+  useEffect(() => { if (!open && cancelRef.current) { cancelRef.current(); cancelRef.current = null; } }, [open]);
 
-  async function streamChat(apiMessages: { role: string; content: string }[], onChunk: (text: string) => void, onDone: () => void, onError: (err: string) => void) {
-    const controller = new AbortController();
-    abortRef.current = controller;
-    try {
-      const response = await fetch(API_URL, {
-        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getApiKey()}` },
-        body: JSON.stringify({ model: MODEL_NAME, messages: apiMessages, max_tokens: 1200, temperature: 0.7, stream: true }),
-        signal: controller.signal,
-      });
-      if (!response.ok) { onError('API请求失败，请稍后重试'); return; }
-      const reader = response.body?.getReader();
-      if (!reader) { onError('无法读取响应流'); return; }
-      const decoder = new TextDecoder();
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
-        for (const line of lines) {
-          if (!line.trim() || !line.startsWith('data:')) continue;
-          const dataStr = line.slice(5).trim();
-          if (dataStr === '[DONE]') { onDone(); return; }
-          try { const json = JSON.parse(dataStr); const delta = json.choices?.[0]?.delta?.content || ''; if (delta) { onChunk(delta); } } catch { /* ignore */ }
-        }
-      }
-      onDone();
-    } catch (e: any) { if (e.name === 'AbortError') return; onError('网络异常，请检查网络后重试'); }
-    finally { abortRef.current = null; }
+  function streamChat(apiMessages: { role: string; content: string }[], onChunk: (text: string) => void, onDone: () => void, onError: (err: string) => void) {
+    cancelRef.current = streamSiliconAPI(apiMessages, {
+      onChunk,
+      onDone: () => { cancelRef.current = null; onDone(); },
+      onError: (err) => { cancelRef.current = null; onError(err); },
+    }, { model: MODEL_NAME, maxTokens: 1200 });
   }
 
   async function copyMessage(content: string, id: string) {
