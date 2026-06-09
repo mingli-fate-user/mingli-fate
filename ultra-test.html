@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>极简API测试</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,-apple-serif;background:#0a0a0f;color:#fff;padding:20px;line-height:1.6}
+.btn{display:block;width:100%;padding:14px;margin:10px 0;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer}
+.blue{background:#2563eb;color:#fff}
+.green{background:#16a34a;color:#fff}
+.red{background:#dc2626;color:#fff}
+.gray{background:#444;color:#ccc}
+.log{background:#1a1a2e;padding:12px;border-radius:10px;margin:12px 0;font-size:13px;white-space:pre-wrap;word-break:break-all;max-height:50vh;overflow:auto;border:1px solid #333}
+.ok{color:#4ade80;font-weight:700}
+.err{color:#f87171;font-weight:700}
+.warn{color:#fbbf24}
+.step{color:#60a5fa}
+</style>
+</head>
+<body>
+<h2 style="text-align:center;margin-bottom:10px">极简API测试</h2>
+<p style="text-align:center;color:#888;font-size:13px;margin-bottom:15px">
+  如果这里也失败，说明你的浏览器/网络无法访问硅基流动API
+</p>
+
+<button class="btn blue" onclick="testFetch()">测试 fetch</button>
+<button class="btn green" onclick="testXHR()">测试 XMLHttpRequest</button>
+<button class="btn red" onclick="testImage()">测试图片预连接</button>
+<button class="btn gray" onclick="clearAll()">清除</button>
+
+<div class="log" id="log">等待测试...</div>
+
+<script>
+// ====== 配置 ======
+const KEY = 'sk-exbzhkddusywrlknvkgdzcgjraluipqxhvquzeuwbyekdikl';
+const ENDPOINT = 'https://api.siliconflow.cn/v1/chat/completions';
+
+function $(id){ return document.getElementById(id); }
+function log(msg, type) {
+  const t = new Date().toLocaleTimeString();
+  const cls = type==='ok'?'ok':type==='err'?'err':type==='warn'?'warn':type==='step'?'step':'';
+  $('log').innerHTML += '['+t+'] <span class="'+cls+'">'+msg+'</span>\n';
+  $('log').scrollTop = $('log').scrollHeight;
+}
+function clearAll(){ $('log').innerHTML=''; }
+
+// ====== 测试1: fetch ======
+async function testFetch() {
+  log('=== fetch 测试 ===', 'step');
+  try {
+    log('发起 fetch...', 'step');
+    const r = await fetch(ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer '+KEY
+      },
+      body: JSON.stringify({
+        model: 'deepseek-ai/DeepSeek-V4-Flash',
+        messages: [{role:'user',content:'你好'}],
+        max_tokens: 50
+      })
+    });
+    log('fetch 返回状态: '+r.status, 'step');
+    if (r.ok) {
+      const d = await r.json();
+      const c = d.choices?.[0]?.message?.content || '';
+      log('✅ fetch 成功! 回复:'+c.slice(0,30), 'ok');
+    } else {
+      const t = await r.text();
+      log('❌ HTTP失败:'+r.status+' '+t.slice(0,200), 'err');
+    }
+  } catch(e) {
+    log('❌ fetch异常:'+(e.message||e)+' 类型:'+(typeof e)+' 名:'+(e.name||'?'), 'err');
+    log('❌ 可能是浏览器拦截了fetch请求', 'warn');
+  }
+}
+
+// ====== 测试2: XHR ======
+function testXHR() {
+  log('=== XHR 测试 ===', 'step');
+  try {
+    log('创建 XMLHttpRequest...', 'step');
+    const x = new XMLHttpRequest();
+    x.open('POST', ENDPOINT, true);
+    x.setRequestHeader('Content-Type','application/json');
+    x.setRequestHeader('Authorization','Bearer '+KEY);
+    x.timeout = 30000;
+    x.onload = function(){
+      log('XHR 状态:'+x.status, 'step');
+      if(x.status>=200&&x.status<300){
+        try{
+          const d=JSON.parse(x.responseText);
+          const c=d.choices?.[0]?.message?.content||'';
+          log('✅ XHR成功! 回复:'+c.slice(0,30), 'ok');
+        }catch{ log('❌ XHR解析失败', 'err'); }
+      } else {
+        log('❌ XHR HTTP失败:'+x.status, 'err');
+      }
+    };
+    x.onerror=function(){ log('❌ XHR网络错误', 'err'); };
+    x.ontimeout=function(){ log('❌ XHR超时', 'err'); };
+    log('发送请求...', 'step');
+    x.send(JSON.stringify({
+      model:'deepseek-ai/DeepSeek-V4-Flash',
+      messages:[{role:'user',content:'你好'}],
+      max_tokens:50
+    }));
+  } catch(e) {
+    log('❌ XHR异常:'+(e.message||e), 'err');
+  }
+}
+
+// ====== 测试3: 图片预连接 ======
+function testImage() {
+  log('=== 图片预连接测试 ===', 'step');
+  log('尝试通过img标签连接api域名...', 'step');
+  const img = new Image();
+  img.onload = function(){ log('✅ 图片加载成功(域名可达)', 'ok'); };
+  img.onerror = function(){ log('❌ 图片加载失败(域名可能不可达)', 'err'); };
+  img.src = 'https://api.siliconflow.cn/favicon.ico?t='+Date.now();
+}
+
+// 页面加载时自动测试一次 fetch
+setTimeout(testFetch, 500);
+</script>
+</body>
+</html>
