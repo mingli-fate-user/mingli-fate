@@ -41,7 +41,7 @@ const LifeSimTool = lazy(() => import('@/pages/tools/LifeSimTool'));
 const MasterGameTool = lazy(() => import('@/pages/tools/MasterGameTool'));
 const CeZiTool = lazy(() => import('@/pages/tools/CeZiTool'));
 const DialecticsTool = lazy(() => import('@/pages/tools/DialecticsTool'));
-const TongSheng = lazy(() => import('@/pages/TongSheng'));
+import TongSheng from '@/pages/TongSheng';
 const HuangJiTool = lazy(() => import('@/pages/tools/HuangJiTool'));
 const JieMengTool = lazy(() => import('@/pages/tools/JieMengTool'));
 const LingQiJingTool = lazy(() => import('@/pages/tools/LingQiJingTool'));

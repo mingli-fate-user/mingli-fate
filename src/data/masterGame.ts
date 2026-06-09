@@ -215,7 +215,7 @@ export function makeScorePrompt(
   const panType = isZiWei ? '紫微命盘' : '八字';
   const basisNote = isZiWei ? '评分要关注主星庙旺、三方四正、四化飞星、宫位吉凶' : '评分要关注五行旺衰、格局成败、大运配合、十神宫位';
 
-  return `你是黄师傅，${title}宗师兼严师。请对用户提交的${title}分析进行严格评分。
+  return `你是黄师傅，${title}宗师兼温柔导师。请对用户提交的${title}分析进行合理评分，既要肯定用户的努力，也要指出不足之处。
 
 【命盘信息】
 ${panType}：${pillar}
@@ -228,26 +228,28 @@ ${panType}：${pillar}
 
 请输出以下格式的JSON评分结果：
 {
-  "overallPattern": { "score": 0-40, "feedback": "具体评价，指出对在哪里、错在哪里" },
-  "wealth": { "score": 0-10, "feedback": "具体评价" },
-  "marriage": { "score": 0-10, "feedback": "具体评价" },
-  "friendship": { "score": 0-10, "feedback": "具体评价" },
-  "career": { "score": 0-10, "feedback": "具体评价" },
-  "family": { "score": 0-10, "feedback": "具体评价" },
-  "parents": { "score": 0-10, "feedback": "具体评价" },
+  "overallPattern": { "score": 0-40, "feedback": "具体评价，多鼓励，指出对在哪里、哪里可以改进" },
+  "wealth": { "score": 0-10, "feedback": "具体评价，多鼓励" },
+  "marriage": { "score": 0-10, "feedback": "具体评价，多鼓励" },
+  "friendship": { "score": 0-10, "feedback": "具体评价，多鼓励" },
+  "career": { "score": 0-10, "feedback": "具体评价，多鼓励" },
+  "family": { "score": 0-10, "feedback": "具体评价，多鼓励" },
+  "parents": { "score": 0-10, "feedback": "具体评价，多鼓励" },
   "total": 总分,
   "grade": "评级文字（命理小白/初学入门/略有小成/登堂入室/一代宗师之一）",
-  "summary": "200字左右的总体评价",
-  "studyAdvice": "针对用户薄弱环节给出具体学习建议，包括应该读什么书、重点学什么、如何练习"
+  "summary": "200字左右的总体评价，以鼓励为主",
+  "studyAdvice": "针对用户薄弱环节给出温和的学习建议，鼓励用户继续学习"
 }
 
 评分原则：
-1. 必须客观严格，不能送分
-2. 说对了关键点给高分，泛泛而谈给低分
-3. 说错了要明确指出错误并解释
-4. ${basisNote}
-5. 各分项要关注对应宫位和星曜/十神
-6. 只输出JSON，不要其他文字`;
+1. 鼓励为主，但也不能盲目给满分
+2. 说对了关键点给较高分，方向对但不够深入给中等分
+3. 说错了温和指出并解释正确答案
+4. 即使分析不够全面，只要方向对也要给一定分数（最低给满分的30%）
+5. ${basisNote}
+6. 各分项要关注对应宫位和星曜/十神
+7. 整体格局分析（40分）要宽松一些，鼓励用户大胆分析
+8. 只输出JSON，不要其他文字`;
 }
 
 // 六爻排盘 prompt
@@ -300,7 +302,7 @@ export function makeLiuYaoAnswerPrompt(info: GuaInfo): string {
 
 // 六爻评分 prompt
 export function makeLiuYaoScorePrompt(info: GuaInfo, userAnalysis: string, userResult: string, aiAnswer: LiuYaoAnswer): string {
-  return `你是六爻宗师兼严师。请对用户提交的断卦进行严格评分。
+  return `你是六爻宗师兼温柔导师。请对用户提交的断卦进行合理评分，鼓励为主。
 
 【卦象信息】
 占卦人：${info.questioner}
@@ -320,18 +322,22 @@ export function makeLiuYaoScorePrompt(info: GuaInfo, userAnalysis: string, userR
 请输出JSON评分：
 {
   "analysisScore": 0-50,
-  "analysisFeedback": "对用户分析过程的评价，指出用神判断是否对、旺衰分析是否准、动爻理解是否有误",
+  "analysisFeedback": "多鼓励，指出对在哪里、哪里可以改进",
   "resultScore": 0-30,
-  "resultFeedback": "对最终断语的评价，吉凶判断是否对、建议是否合理",
+  "resultFeedback": "以鼓励为主",
   "logicScore": 0-20,
-  "logicFeedback": "对推理逻辑的评价，是否条理清晰、论证充分",
+  "logicFeedback": "多肯定推理思路",
   "total": 总分,
   "grade": "评级（六爻小白/初学入门/略有小成/登堂入室/一代宗师之一）",
-  "summary": "总体评价",
-  "studyAdvice": "具体学习建议"
+  "summary": "以鼓励为主的总体评价",
+  "studyAdvice": "温和的学习建议"
 }
 
-评分要严格客观，只输出JSON`;
+评分原则：
+1. 鼓励为主，方向对就给较高分
+2. 即使不全面，方向正确就给一定分数（最低给满分的30%）
+3. 说错了温和指出
+4. 只输出JSON`;
 }
 
 // 梅花易数 prompt

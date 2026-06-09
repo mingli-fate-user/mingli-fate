@@ -422,7 +422,7 @@ export default function MasterGameTool() {
     setPhase('display');
   }
 
-  // ===== 紫微：代码排12宫 + AI只分析格局 =====
+  // ===== 紫微：优先iztro，失败则用AI排盘 =====
   async function startZiWei() {
     const info = generateRandomBazi();
     setBaziInfo(info);
@@ -430,15 +430,25 @@ export default function MasterGameTool() {
     setGender(genderText);
     gameIdRef.current = `ziwei_${info.year}_${info.month}_${info.day}_${info.hour}_${info.gender}`;
 
-    setLoadingText('正在加载紫微斗数排盘库...');
-    let astro: any = null;
-    try { astro = await loadIztro(); } catch { /* fallback */ }
+    setLoadingText('正在排紫微命盘...');
 
-    let summaryText = `紫微命，${genderText}命`;
+    // 先用八字算日主
+    let dayGan = '戊';
+    try {
+      const L = window.Lunar;
+      if (L) {
+        const lunar = L.fromYmdHms(info.year, info.month, info.day, info.hour, 0, 0);
+        dayGan = lunar.getEightChar().getDay()[0];
+      }
+    } catch { /* default */ }
+
     let palaces: any[] = [];
 
-    if (astro && astro.astrolabeBySolarDate) {
-      try {
+    // 尝试iztro（3秒超时）
+    try {
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000));
+      const astro: any = await Promise.race([loadIztro(), timeoutPromise]);
+      if (astro && astro.astrolabeBySolarDate) {
         const a = astro.astrolabeBySolarDate(`${info.year}-${String(info.month).padStart(2,'0')}-${String(info.day).padStart(2,'0')}`, info.hour, genderText);
         palaces = (a.palaces || []).map((p: any) => ({
           name: p.name || '', position: p.earthBranch || '',
@@ -446,18 +456,76 @@ export default function MasterGameTool() {
           minorStars: (p.minorStars || []).map((s: any) => s.name || s),
           score: p.score,
         }));
-        summaryText = `紫微${a.mutagen || ''}命，${a.fiveElements || ''}局，${genderText}命`;
-      } catch { /* use empty */ }
+      }
+    } catch { /* fallback */ }
+
+    // iztro失败 → AI排盘
+    if (palaces.length === 0) {
+      setLoadingText('AI正在排紫微命盘...');
+      try {
+        const aiPanResponse = await callSiliconAPIWithRetry([
+          { role: 'system', content: '你是黄师傅，精通紫微斗数排盘。请为以下生辰排出完整的紫微斗数十二宫命盘。' + NO_MARKDOWN_RULE },
+          { role: 'user', content: `请为以下生辰排紫微斗数命盘：
+公历 ${info.year}年${info.month}月${info.day}日 ${info.hour}时
+性别：${genderText}
+日主：${dayGan}
+
+请输出以下格式的十二宫数据（纯文本，每行一个宫位）：
+命宫：[主星1]、[主星2] |位置[地支]
+父母：[主星] |位置[地支]
+福德：[主星] |位置[地支]
+田宅：[主星] |位置[地支]
+事业：[主星] |位置[地支]
+交友：[主星] |位置[地支]
+迁移：[主星] |位置[地支]
+疾厄：[主星] |位置[地支]
+财帛：[主星] |位置[地支]
+子女：[主星] |位置[地支]
+夫妻：[主星] |位置[地支]
+兄弟：[主星] |位置[地支]
+
+每个宫位至少填一个主星，不能为空。` },
+        ], { maxTokens: 1500, temperature: 0.3 });
+
+        // 解析AI返回
+        const nameMap: Record<string, string> = {
+          '命宫': '命宫', '父母': '父母', '福德': '福德', '田宅': '田宅',
+          '事业': '事业', '交友': '交友', '迁移': '迁移', '疾厄': '疾厄',
+          '财帛': '财帛', '子女': '子女', '夫妻': '夫妻', '兄弟': '兄弟',
+        };
+        for (const line of aiPanResponse.split('\n')) {
+          for (const [key, name] of Object.entries(nameMap)) {
+            if (line.includes(key)) {
+              const content = line.split(/[：:]/)[1] || '';
+              const parts = content.split('|');
+              const starsText = parts[0] || '';
+              const posText = parts[1] || '';
+              const starList = starsText.split(/[、,，]/).map(s => s.trim()).filter(s => s && s !== '无主星');
+              const posMatch = posText.match(/[子丑寅卯辰巳午未申酉戌亥]/);
+              palaces.push({ name, position: posMatch ? posMatch[0] : '', majorStars: starList.length > 0 ? starList : ['天机'], minorStars: [] });
+              break;
+            }
+          }
+        }
+      } catch { /* use default */ }
     }
 
-    setPillar(summaryText);
+    // 兜底默认值
+    if (palaces.length === 0) {
+      const defaults: Record<string, string[]> = {
+        '命宫': ['紫微', '天府'], '父母': ['太阳'], '福德': ['天同'], '田宅': ['武曲'],
+        '事业': ['廉贞', '天相'], '交友': ['天机'], '迁移': ['贪狼'], '疾厄': ['巨门'],
+        '财帛': ['太阴'], '子女': ['天梁'], '夫妻': ['七杀'], '兄弟': ['破军'],
+      };
+      palaces = Object.entries(defaults).map(([name, stars]) => ({ name, position: '', majorStars: stars, minorStars: [] }));
+    }
+
+    setPillar(`紫微命，${genderText}命`);
     setPattern('紫微斗数');
     setZiweiPalaces(palaces);
 
     setLoadingText('AI正在隐藏标准答案...');
-    const panDesc = palaces.length > 0
-      ? palaces.map(p => `${p.name}：${(p.majorStars || []).join('、') || '无主星'}`).join('\n')
-      : '排盘库未加载';
+    const panDesc = palaces.map(p => `${p.name}：${(p.majorStars || []).join('、')}`).join('\n');
 
     const answerPrompt = `你是黄师傅，紫微斗数宗师。请严格分析以下紫微命盘，输出JSON：
 
@@ -475,7 +543,7 @@ export default function MasterGameTool() {
   "family": "家庭分析，80字左右",
   "parents": "父母分析，80字左右"
 }
-只输出JSON，不要有其他文字。`;
+只输出JSON。`;
 
     const answerResponse = await callSiliconAPIWithRetry([
       { role: 'system', content: '你是黄师傅，紫微斗数宗师。请严格分析输出JSON。只输出JSON。' + NO_MARKDOWN_RULE },
