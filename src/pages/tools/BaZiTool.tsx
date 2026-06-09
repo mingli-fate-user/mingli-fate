@@ -1,9 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Calculator, Info } from 'lucide-react';
+import { Calculator, Info, Baby, Search } from 'lucide-react';
 import AIParser from '@/components/AIParser';
 import SaveRecordButton from '@/components/SaveRecordButton';
 import DateInput from '@/components/DateInput';
 import { useRestoreRecord } from '@/hooks/useRestoreRecord';
+import IntroModal from '@/components/IntroModal';
+import { getToolIntro } from '@/data/toolIntros';
+import { callSiliconAPIWithRetry } from '@/utils/apiClient';
+import HighlightText from '@/components/HighlightText';
+import { NO_MARKDOWN_RULE } from '@/utils/aiTextUtils';
 
 const WUXING_COLORS: Record<string, string> = {
   '木': 'text-green-400', '火': 'text-red-400', '土': 'text-yellow-400',
@@ -58,6 +63,12 @@ export default function BaZiTool() {
   const [loading, setLoading] = useState(false);
   const [libReady, setLibReady] = useState(false);
   const pendingData = useRestoreRecord('bazi');
+
+  // 起名与名字解析
+  const [nameInput, setNameInput] = useState('');
+  const [nameResult, setNameResult] = useState('');
+  const [nameLoading, setNameLoading] = useState(false);
+  const [nameTab, setNameTab] = useState<'qiming' | 'jiexi'>('qiming');
 
   // 从保存记录恢复
   useEffect(() => {
@@ -125,6 +136,55 @@ export default function BaZiTool() {
     setLoading(false);
   }
 
+  // 八字起名：根据五行缺失给出起名建议
+  async function handleNameAnalyze() {
+    if (!result) return;
+    setNameLoading(true);
+    const pillar = `${result.year.gan}${result.year.zhi} ${result.month.gan}${result.month.zhi} ${result.day.gan}${result.day.zhi} ${result.hour.gan}${result.hour.zhi}`;
+    const prompt = `你是黄师傅，精通八字起名学。八字为${pillar}，日主${result.dayGan}，性别${result.gender}。
+请从以下角度分析：
+1. 八字五行旺衰分析
+2. 喜用神（起名应补的五行）
+3. 起名建议：推荐适合的字（带五行属性），说明为什么
+4. 推荐5组好名字（两个字），解释每个名字与八字的配合
+像聊天一样自然说，不要编号。${NO_MARKDOWN_RULE}`;
+    try {
+      const res = await callSiliconAPIWithRetry([
+        { role: 'system', content: '你是黄师傅，八字起名专家。' + NO_MARKDOWN_RULE },
+        { role: 'user', content: prompt },
+      ], { maxTokens: 1500 });
+      setNameResult(res);
+    } catch {
+      setNameResult('分析服务暂时不可用，请稍后重试。');
+    }
+    setNameLoading(false);
+  }
+
+  // 名字解析
+  async function handleNameParse() {
+    if (!nameInput.trim() || nameInput.trim().length < 2) {
+      alert('请输入至少两个汉字的名字');
+      return;
+    }
+    setNameLoading(true);
+    const prompt = `你是黄师傅，精通姓名学。请解析名字"${nameInput.trim()}"：
+1. 每个字的笔画数和五行属性
+2. 三才五格分析（天格、人格、地格、外格、总格）
+3. 名字的音韵分析
+4. 综合评分和建议
+像聊天一样自然说，不要编号。${NO_MARKDOWN_RULE}`;
+    try {
+      const res = await callSiliconAPIWithRetry([
+        { role: 'system', content: '你是黄师傅，姓名学专家。' + NO_MARKDOWN_RULE },
+        { role: 'user', content: prompt },
+      ], { maxTokens: 1500 });
+      setNameResult(res);
+    } catch {
+      setNameResult('分析服务暂时不可用，请稍后重试。');
+    }
+    setNameLoading(false);
+  }
+
   function getWX(gan: string) {
     const map: Record<string, string> = {
       '甲': '木', '乙': '木', '丙': '火', '丁': '火', '戊': '土',
@@ -137,6 +197,7 @@ export default function BaZiTool() {
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">八字排盘</h1>
+          <div className="mt-2 mb-4"><IntroModal {...getToolIntro('bazi')}/></div>
         <p className="text-white/60">基于 lunar-javascript 开源库，精确排盘</p>
         {!libReady && <p className="text-xs text-orange-400 mt-2">正在加载排盘库...</p>}
       </div>
@@ -237,6 +298,51 @@ export default function BaZiTool() {
                   <span className="text-2xl font-bold text-white">{z}</span>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* 八字起名 + 名字解析 */}
+          <div className="border border-amber-200/30 rounded-lg overflow-hidden">
+            <div className="flex border-b border-amber-200/20">
+              {[
+                { key: 'qiming' as const, label: '八字起名', icon: Baby },
+                { key: 'jiexi' as const, label: '名字解析', icon: Search },
+              ].map(t => (
+                <button key={t.key} onClick={() => setNameTab(t.key)}
+                  className={`flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-all ${nameTab === t.key ? 'text-amber-400 bg-amber-400/10' : 'text-white/40 hover:text-white/60'}`}>
+                  <t.icon className="w-3.5 h-3.5" />{t.label}
+                </button>
+              ))}
+            </div>
+            <div className="p-4 space-y-3">
+              {nameTab === 'qiming' && (
+                <div className="space-y-3">
+                  <p className="text-xs text-white/40">AI根据八字五行为您推荐适合的名字</p>
+                  <button onClick={handleNameAnalyze} disabled={nameLoading}
+                    className="w-full px-4 py-2.5 bg-amber-500/20 text-amber-400 rounded-lg text-sm font-medium hover:bg-amber-500/30 disabled:opacity-50 flex items-center justify-center gap-2 transition-all">
+                    <Baby className="w-4 h-4" />{nameLoading ? '分析中...' : '获取起名建议'}
+                  </button>
+                </div>
+              )}
+              {nameTab === 'jiexi' && (
+                <div className="space-y-3">
+                  <p className="text-xs text-white/40">输入名字，AI从姓名学角度为您解析</p>
+                  <div className="flex gap-2">
+                    <input type="text" value={nameInput} onChange={e => setNameInput(e.target.value)}
+                      placeholder="输入名字（两个汉字以上）" maxLength={4}
+                      className="flex-1 px-3 py-2 bg-black/50 border border-amber-200/20 rounded-lg text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-amber-400/30" />
+                    <button onClick={handleNameParse} disabled={nameLoading}
+                      className="px-4 py-2 bg-amber-500/20 text-amber-400 rounded-lg text-sm hover:bg-amber-500/30 disabled:opacity-50 flex items-center gap-1.5 transition-all">
+                      <Search className="w-3.5 h-3.5" />{nameLoading ? '解析中...' : '解析'}
+                    </button>
+                  </div>
+                </div>
+              )}
+              {nameResult && (
+                <div className="p-3 bg-black/30 rounded-lg border border-amber-200/10">
+                  <p className="text-xs text-white/60 leading-relaxed"><HighlightText text={nameResult} /></p>
+                </div>
+              )}
             </div>
           </div>
 

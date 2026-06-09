@@ -4,6 +4,8 @@ import AIParser from '@/components/AIParser';
 import SaveRecordButton from '@/components/SaveRecordButton';
 import DateInput from '@/components/DateInput';
 import { useRestoreRecord } from '@/hooks/useRestoreRecord';
+import IntroModal from '@/components/IntroModal';
+import { getToolIntro } from '@/data/toolIntros';
 
 // 动态import CJS模块
 type TaobiType = any;
@@ -251,6 +253,7 @@ export default function QiMenTool() {
     <div className="max-w-5xl mx-auto px-4 py-8">
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">奇门遁甲排盘</h1>
+          <div className="mt-2 mb-4"><IntroModal {...getToolIntro('qimen')}/></div>
         <p className="text-white/60">时家奇门，天文算法精确节气，九宫格展示天地人神四层盘</p>
         {!libReady && !loadError && <p className="text-xs text-orange-400 mt-2">正在加载排盘库...</p>}
         {loadError && <p className="text-xs text-red-400 mt-2">加载失败：{loadError}</p>}

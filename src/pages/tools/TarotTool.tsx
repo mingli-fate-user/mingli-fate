@@ -3,6 +3,8 @@ import { Sparkles, Shuffle, RotateCcw, Info } from 'lucide-react';
 import { SPREAD_TYPES, drawCards, type DrawnCard, type SpreadType } from '@/data/tarotData';
 import AIParser from '@/components/AIParser';
 import SaveRecordButton from '@/components/SaveRecordButton';
+import IntroModal from '@/components/IntroModal';
+import { getToolIntro } from '@/data/toolIntros';
 
 // 牌面颜色映射
 const TYPE_COLORS: Record<string, { bg: string; border: string; text: string; glow: string }> = {
@@ -87,6 +89,7 @@ export default function TarotTool() {
             <Info className="w-5 h-5" />
           </button>
         </h2>
+          <div className="mt-2 mb-4"><IntroModal {...getToolIntro('tarot')}/></div>
         <p className="text-sm text-white/60">韦特塔罗 · 78张牌 · 六种经典牌阵</p>
       </div>
 

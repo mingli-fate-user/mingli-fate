@@ -4,6 +4,8 @@ import AIParser from '@/components/AIParser';
 import DateInput from '@/components/DateInput';
 import SaveRecordButton from '@/components/SaveRecordButton';
 import { useRestoreRecord } from '@/hooks/useRestoreRecord';
+import IntroModal from '@/components/IntroModal';
+import { getToolIntro } from '@/data/toolIntros';
 
 const GONGS = ['大安', '留连', '速喜', '赤口', '小吉', '空亡'];
 const GONG_DESC: Record<string, { wuxing: string; liushen: string; desc: string; ji: string }> = {
@@ -170,6 +172,7 @@ export default function XiaoLiuRenTool() {
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">江氏小六壬起课</h1>
+          <div className="mt-2 mb-4"><IntroModal {...getToolIntro('xiaoliuren')}/></div>
         <p className="text-white/60">输入公历日期，自动换算农历后掌上掐算出吉凶</p>
       </div>
 

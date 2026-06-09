@@ -3,6 +3,8 @@ import { Sparkles, Star, MapPin, Info, AlertCircle } from 'lucide-react';
 import { calculateNatalChart, SIGNS, type PlanetPosition, type HouseCusp, type Aspect } from '@/data/astroChart';
 import AIParser from '@/components/AIParser';
 import SaveRecordButton from '@/components/SaveRecordButton';
+import IntroModal from '@/components/IntroModal';
+import { getToolIntro } from '@/data/toolIntros';
 
 const SIGN_COLORS = [
   '#ef4444', '#f97316', '#eab308', '#22c55e',
@@ -246,6 +248,7 @@ export default function AstroTool() {
             <Info className="w-5 h-5" />
           </button>
         </h2>
+          <div className="mt-2 mb-4"><IntroModal {...getToolIntro('astro')}/></div>
         <p className="text-sm text-white/60">本命盘 · 十大行星 · 十二宫位 · 相位分析</p>
       </div>
 

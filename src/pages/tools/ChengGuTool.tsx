@@ -4,6 +4,8 @@ import AIParser from '@/components/AIParser';
 import SaveRecordButton from '@/components/SaveRecordButton';
 import DateInput from '@/components/DateInput';
 import { useRestoreRecord } from '@/hooks/useRestoreRecord';
+import IntroModal from '@/components/IntroModal';
+import { getToolIntro } from '@/data/toolIntros';
 import {
   YEAR_WEIGHT, MONTH_WEIGHT, DAY_WEIGHT, HOUR_WEIGHT,
   getShiChenName, formatWeight, weightToNumber, findPoem,
@@ -143,6 +145,7 @@ export default function ChengGuTool() {
       {/* Header */}
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">袁天罡称骨法</h1>
+          <div className="mt-2 mb-4"><IntroModal {...getToolIntro('chenggu')}/></div>
         <p className="text-white/60">输入生辰八字，称出命中骨重，解读一生运势</p>
         {!libReady && !loadError && <p className="text-xs text-orange-400 mt-2">正在加载历法库...</p>}
       {loadError && <p className="text-xs text-red-400 mt-2">加载失败：{loadError}</p>}

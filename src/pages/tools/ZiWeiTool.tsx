@@ -4,6 +4,8 @@ import AIParser from '@/components/AIParser';
 import SaveRecordButton from '@/components/SaveRecordButton';
 import DateInput from '@/components/DateInput';
 import { useRestoreRecord } from '@/hooks/useRestoreRecord';
+import IntroModal from '@/components/IntroModal';
+import { getToolIntro } from '@/data/toolIntros';
 
 const DI_ZHI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
 
@@ -184,6 +186,7 @@ export default function ZiWeiTool() {
       {/* Header */}
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">紫微斗数排盘</h1>
+          <div className="mt-2 mb-4"><IntroModal {...getToolIntro('ziwei')}/></div>
         <p className="text-white/60">基于 iztro 开源库，十二宫排盘，精确星曜庙旺</p>
         {!libReady && <p className="text-xs text-orange-400 mt-2">正在加载排盘库...</p>}
       </div>

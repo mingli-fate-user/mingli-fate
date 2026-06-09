@@ -7,6 +7,8 @@ import {
 import SaveRecordButton from '@/components/SaveRecordButton';
 import HighlightText from '@/components/HighlightText';
 import { NO_MARKDOWN_RULE } from '@/utils/aiTextUtils';
+import IntroModal from '@/components/IntroModal';
+import { getToolIntro } from '@/data/toolIntros';
 import {
   calculateTaiYi,
   checkNationalFortuneQuestion,
@@ -319,6 +321,7 @@ ${res.patterns.map(p => `${p.level === '吉' ? '✦' : '✦'} [${p.level}]${p.na
           >
             太乙神数
           </h1>
+          <div className="mt-2 mb-4"><IntroModal {...getToolIntro('taiyi')}/></div>
           <p className="text-amber-200/60 text-lg max-w-2xl mx-auto leading-relaxed">
             《太乙金镜式经》云：太乙者，天帝之神也，主司国运，统摄万方。
             以积年入局，推阴阳七十二局，考阳九百六之数。

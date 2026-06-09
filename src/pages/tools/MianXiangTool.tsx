@@ -2,6 +2,8 @@ import { useState, useRef } from 'react';
 import { Upload, Camera, Sparkles, X, Copy, Check, Loader2, User, AlertCircle, Scan, UserCircle } from 'lucide-react';
 import { MIANXIANG_SYSTEM_PROMPT } from '@/data/mianxiangPrompt';
 import SaveRecordButton from '@/components/SaveRecordButton';
+import IntroModal from '@/components/IntroModal';
+import { getToolIntro } from '@/data/toolIntros';
 
 const API_KEY_PARTS = ['sk-exbzhkdd', 'usywrlknvkg', 'dzcgjraluip', 'qxhvquzeuw', 'byekdikl'];
 const VISION_MODEL = 'Qwen/Qwen3.5-9B';
@@ -221,6 +223,7 @@ export default function MianXiangTool() {
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">相法 AI 解析</h1>
+          <div className="mt-2 mb-4"><IntroModal {...getToolIntro('mianxiang')}/></div>
         <p className="text-white/60">选择分析模式，上传照片，AI为您解读面相</p>
       </div>
 

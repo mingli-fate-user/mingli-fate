@@ -5,6 +5,8 @@ import {
 } from 'lucide-react';
 import { ROOM_TYPES, GONG_NAMES, type RoomLayout, type HouseLayout } from '@/data/xuankong';
 import { Link } from 'react-router-dom';
+import IntroModal from '@/components/IntroModal';
+import { getToolIntro } from '@/data/toolIntros';
 
 // ============================================================
 // 风水户型设计器 v3 - 修复方位+手机触摸+数据转录
@@ -226,11 +228,19 @@ export default function FengShuiDesigner() {
     if (dragging) {
       setRooms(prev => prev.map(room => {
         if (room.id !== dragging.id) return room;
-        return {
-          ...room,
-          x: Math.round((Math.max(0, Math.min(CANVAS_SIZE - room.width, x - dragging.offsetX))) / GRID) * GRID,
-          y: Math.round((Math.max(0, Math.min(CANVAS_SIZE - room.height, y - dragging.offsetY))) / GRID) * GRID,
-        };
+        let nx = Math.round((Math.max(0, Math.min(CANVAS_SIZE - room.width, x - dragging.offsetX))) / GRID) * GRID;
+        let ny = Math.round((Math.max(0, Math.min(CANVAS_SIZE - room.height, y - dragging.offsetY))) / GRID) * GRID;
+        // 中宫吸附：房间中心靠近画布中心时自动吸附
+        const SNAP_DIST = 35;
+        const cx = nx + room.width / 2;
+        const cy = ny + room.height / 2;
+        const center = CANVAS_SIZE / 2;
+        const dist = Math.sqrt((cx - center) ** 2 + (cy - center) ** 2);
+        if (dist < SNAP_DIST) {
+          nx = Math.round((center - room.width / 2) / GRID) * GRID;
+          ny = Math.round((center - room.height / 2) / GRID) * GRID;
+        }
+        return { ...room, x: nx, y: ny };
       }));
     }
 
@@ -344,6 +354,7 @@ export default function FengShuiDesigner() {
           <h1 className="text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-green-200 to-emerald-400" style={{ fontFamily: "'Noto Serif SC', 'KaiTi', serif" }}>
             风水户型设计器
           </h1>
+          <div className="mt-2 mb-4"><IntroModal {...getToolIntro('fengshui')}/></div>
           <p className="text-emerald-200/60 text-base max-w-2xl mx-auto">
             点击模块添加 → 拖拽移动（支持手机） → 旋转罗盘调方位 → 保存自动转录数据 → 玄空/奇门排盘
           </p>

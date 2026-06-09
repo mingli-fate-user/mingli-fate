@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, BookOpen, MessageSquare, User, ChevronRight, LogIn, X } from 'lucide-react';
+import { Sparkles, BookOpen, MessageSquare, User, ChevronRight, LogIn, X, Gamepad2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 // 工具颜色配置 - 每个工具有独特的鲜艳颜色
@@ -32,6 +32,7 @@ const tools = [
 
 const featureCards = [
   { icon: BookOpen, title: '系统学习', desc: '从零基础到进阶的完整命理学习体系', link: '/study', c: T.emerald },
+  { icon: Gamepad2, title: '命理小游戏', desc: '命理人生模拟器、我是大师考核，边玩边学', link: '/games', c: T.orange },
   { icon: MessageSquare, title: '命理社区', desc: '与志同道合的朋友一起探讨命理知识', link: '/community', c: T.fuchsia },
   { icon: User, title: '个人中心', desc: '保存排盘记录，管理你的命理档案', link: '/me', c: T.pink },
 ];
@@ -140,7 +141,7 @@ export default function Home() {
 
       {/* Feature Cards - 彩色 */}
       <section className="px-4 sm:px-6 py-16">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {featureCards.map((card, i) => (
             <Link key={card.title} to={card.link}
               className="group bg-white/10 backdrop-blur-md border transition-all duration-500 hover:-translate-y-1 p-7 space-y-5 animate-fade-in"

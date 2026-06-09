@@ -10,6 +10,8 @@ import {
   type DaLiuRenResult,
 } from '@/data/daliuren';
 import { NO_MARKDOWN_RULE } from '@/utils/aiTextUtils';
+import IntroModal from '@/components/IntroModal';
+import { getToolIntro } from '@/data/toolIntros';
 
 // ============================================================
 // 大六壬排盘工具 - 人事之王
@@ -214,6 +216,7 @@ ${res.geJu.map(g => `${g.name}：${g.desc}`).join('\n')}
             }}>
             大六壬
           </h1>
+          <div className="mt-2 mb-4"><IntroModal {...getToolIntro('daliuren')}/></div>
           <p className="text-indigo-200/50 text-base max-w-xl mx-auto leading-relaxed">
             六壬神课，以月将加时排天地盘，四课三传断人事吉凶
           </p>

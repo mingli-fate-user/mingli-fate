@@ -6,6 +6,8 @@ import SaveRecordButton from '@/components/SaveRecordButton';
 import { Link, useSearchParams } from 'react-router-dom';
 import { GONG_NAMES, type HouseLayout } from '@/data/xuankong';
 import { NO_MARKDOWN_RULE } from '@/utils/aiTextUtils';
+import IntroModal from '@/components/IntroModal';
+import { getToolIntro } from '@/data/toolIntros';
 
 const API_KEY_PARTS = ['sk-exbzhkdd', 'usywrlknvkg', 'dzcgjraluip', 'qxhvquzeuw', 'byekdikl'];
 
@@ -311,6 +313,7 @@ export default function QiMenDiLiTool() {
           <h1 className="text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-violet-200 to-purple-400" style={{ fontFamily: "'Noto Serif SC', 'KaiTi', serif" }}>
             奇门地理排盘
           </h1>
+          <div className="mt-2 mb-4"><IntroModal {...getToolIntro('qimendifa')}/></div>
           <p className="text-purple-200/60 text-lg max-w-2xl mx-auto">
             运用奇门遁甲模型解析风水地理，以九星八门察方位吉凶
           </p>

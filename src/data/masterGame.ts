@@ -139,26 +139,25 @@ export const NO_MD = '不要markdown，不要编号，纯文本输出。';
 // 八字排盘 prompt
 export function makeBaziPrompt(info: BaziInfo): string {
   const genderText = info.gender === 'male' ? '男' : '女';
-  return `你是黄师傅，精通八字命理。请为以下八字排盘并输出详细信息：
+  return `你是黄师傅，精通八字命理。请为以下八字排盘并输出详细信息。
+【重要：只排盘，不分析！不判断格局好坏，不预测运势，不给出任何吉凶断语！只列出排盘结果】
 
 【生辰】公历 ${info.year}年${info.month}月${info.day}日 ${info.hour}时
 【性别】${genderText}
 
 请输出以下内容（纯文本，不要markdown）：
-1. 四柱八字（年柱、月柱、日柱、时柱）
+1. 四柱八字（年柱、月柱、日柱、时柱），注明天干地支的五行属性
 2. 日主及五行属性
-3. 十神分布
-4. 格局判断
-5. 大运排列（起运年龄及每步大运）
+3. 十神分布（只列出十神名称，不做解读）
+4. 格局判断（只说出格局名称如"正官格"，不解释好坏）
+5. 大运排列（起运年龄及每步大运干支）
 6. 当前所处大运
 
-输出格式示例：
-四柱：甲子年 丙寅月 戊辰日 庚午时
-日主：戊土
-十神：年干甲木（七杀）、年支子水（正财）...
-格局：正官格
-大运：5岁起运，乙丑、甲子、癸亥、壬戌...
-当前大运：某大运（XX岁-XX岁）`;
+【严禁】
+- 不写"此命"、"格局不错"、"运势"等分析性语句
+- 不做任何吉凶判断
+- 不给出任何运势预测
+- 只列出排盘事实数据`;
 }
 
 // AI分析八字答案 prompt
@@ -211,10 +210,15 @@ export function makeScorePrompt(
     aiText += `\n【${d.name}】\n标准：${(aiAnswers as any)[d.key] || ''}\n`;
   }
 
-  return `你是黄师傅，八字命理宗师兼严师。请对用户提交的命理分析进行严格评分。
+  const isZiWei = mode === 'ziwei';
+  const title = isZiWei ? '紫微斗数' : '八字命理';
+  const panType = isZiWei ? '紫微命盘' : '八字';
+  const basisNote = isZiWei ? '评分要关注主星庙旺、三方四正、四化飞星、宫位吉凶' : '评分要关注五行旺衰、格局成败、大运配合、十神宫位';
+
+  return `你是黄师傅，${title}宗师兼严师。请对用户提交的${title}分析进行严格评分。
 
 【命盘信息】
-八字：${pillar}
+${panType}：${pillar}
 性别：${gender}
 格局：${pattern}
 
@@ -241,14 +245,15 @@ export function makeScorePrompt(
 1. 必须客观严格，不能送分
 2. 说对了关键点给高分，泛泛而谈给低分
 3. 说错了要明确指出错误并解释
-4. 格局分析要关注五行旺衰、格局成败、大运配合
-5. 各分项要关注对应十神和宫位
+4. ${basisNote}
+5. 各分项要关注对应宫位和星曜/十神
 6. 只输出JSON，不要其他文字`;
 }
 
 // 六爻排盘 prompt
 export function makeLiuYaoPrompt(info: GuaInfo): string {
-  return `你是六爻大师。请为以下占卦排盘：
+  return `你是六爻大师。请为以下占卦排盘。
+【重要：只排卦，不断卦！不分析吉凶，不判断结果，不给出任何断语！只列出排卦数据】
 
 【占卦人】${info.questioner}
 【所占之事】${info.question}
@@ -259,11 +264,17 @@ export function makeLiuYaoPrompt(info: GuaInfo): string {
 【世应】${info.shiYing}
 
 请输出：
-1. 完整的六爻排盘（本卦六亲、六神、五行）
-2. 用神取法
-3. 世应关系
-4. 动爻变化分析
-5. 旬空、月破、日冲等神煞`;
+1. 完整的六爻排盘（本卦六亲、六神、五行）— 只列数据
+2. 用神取法 — 只说取什么为用神，不解释原因
+3. 世应关系 — 只写世爻应爻位置，不做吉凶判断
+4. 动爻变化 — 只写动爻变为什么，不做结果推断
+5. 旬空、月破、日冲等神煞 — 只列出来，不解读
+
+【严禁】
+- 不写"此卦"、"大吉"、"不利"、"结果"等断语
+- 不推断任何事情的结果
+- 不给出任何吉凶判断
+- 只列出排卦客观数据`;
 }
 
 // AI断卦答案 prompt
@@ -325,7 +336,8 @@ export function makeLiuYaoScorePrompt(info: GuaInfo, userAnalysis: string, userR
 
 // 梅花易数 prompt
 export function makeMeiHuaPrompt(info: GuaInfo): string {
-  return `你是梅花易数大师。请为以下占卦排盘：
+  return `你是梅花易数大师。请为以下占卦排盘。
+【重要：只排卦，不断卦！不分析吉凶，不判断结果，不给出任何断语！只列出排卦数据】
 
 【占卦人】${info.questioner}
 【所占之事】${info.question}
@@ -335,10 +347,16 @@ export function makeMeiHuaPrompt(info: GuaInfo): string {
 【动爻】${info.yaoCi.join('、')}
 
 请输出：
-1. 梅花易数排盘
-2. 体用分析
-3. 八卦类象对应所占之事
-4. 生克关系分析`;
+1. 梅花易数排盘（本卦、变卦、互卦的卦象排列）
+2. 体用关系 — 只写哪个是体卦哪个是用卦，不解释吉凶
+3. 八卦类象 — 只列出每个卦对应的基本类象，不做事情推断
+4. 生克关系 — 只写五行生克链（如金克木），不推断结果
+
+【严禁】
+- 不写"大吉"、"不利"、"成败"、"结果"等断语
+- 不推断所占之事的吉凶
+- 不给出任何结论性判断
+- 只列出排卦客观数据`;
 }
 
 export function makeMeiHuaAnswerPrompt(info: GuaInfo): string {

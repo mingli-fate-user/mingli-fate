@@ -17,6 +17,8 @@ interface GuaData {
 const YAO_ORDER = ['初九', '九二', '九三', '九四', '九五', '上九', '初六', '六二', '六三', '六四', '六五', '上六', '用九', '用六'];
 
 import { getYaoFromGuaNum, YI_JING_64 } from '@/data/yijing64';
+import IntroModal from '@/components/IntroModal';
+import { getToolIntro } from '@/data/toolIntros';
 
 function loadGuaData(): Record<string, GuaData> {
   return YI_JING_64 as Record<string, GuaData>;
@@ -148,6 +150,7 @@ export default function JinQianGuaTool() {
       {/* Header */}
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">金钱卦</h1>
+          <div className="mt-2 mb-4"><IntroModal {...getToolIntro('jinqiangua')}/></div>
         <p className="text-white/60">心诚则灵，输入问题，摇卦随机得出六十四卦之一</p>
         {!dataReady && <p className="text-xs text-orange-400 mt-2">正在加载卦象数据...</p>}
       </div>

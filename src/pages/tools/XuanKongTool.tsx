@@ -15,6 +15,8 @@ import {
 } from '@/data/xuankong';
 import { NO_MARKDOWN_RULE } from '@/utils/aiTextUtils';
 import { Link, useSearchParams } from 'react-router-dom';
+import IntroModal from '@/components/IntroModal';
+import { getToolIntro } from '@/data/toolIntros';
 
 const API_KEY_PARTS = ['sk-exbzhkdd', 'usywrlknvkg', 'dzcgjraluip', 'qxhvquzeuw', 'byekdikl'];
 
@@ -229,6 +231,7 @@ ${res.patterns.map(p => `${p.name}：${p.desc}`).join('\n')}
           <h1 className="text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400" style={{ fontFamily: "'Noto Serif SC', 'KaiTi', serif" }}>
             玄空飞星排盘
           </h1>
+          <div className="mt-2 mb-4"><IntroModal {...getToolIntro('xuankong')}/></div>
           <p className="text-amber-200/60 text-lg max-w-2xl mx-auto">
             以三元九运为纲，二十四山为目，挨星下卦，察阴阳顺逆，断宅命吉凶
           </p>

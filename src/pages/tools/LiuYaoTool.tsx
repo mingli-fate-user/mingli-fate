@@ -4,6 +4,8 @@ import AIParser from '@/components/AIParser';
 import DateInput from '@/components/DateInput';
 import SaveRecordButton from '@/components/SaveRecordButton';
 import { useRestoreRecord } from '@/hooks/useRestoreRecord';
+import IntroModal from '@/components/IntroModal';
+import { getToolIntro } from '@/data/toolIntros';
 
 const GUA_NAME: Record<string, string> = {
   '111': '乾', '000': '坤', '100': '艮', '011': '兑',
@@ -133,6 +135,7 @@ export default function LiuYaoTool() {
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">六爻起卦</h1>
+          <div className="mt-2 mb-4"><IntroModal {...getToolIntro('liuyao')}/></div>
         <p className="text-white/60">铜钱摇卦或时间起卦，排出六爻卦象</p>
       </div>
 

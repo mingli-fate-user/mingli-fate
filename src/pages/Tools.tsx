@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Lightbulb, Target, Compass, Sparkles, Home, User, Star } from 'lucide-react';
 
 const toolGroups = [
   {
@@ -54,6 +54,30 @@ const toolGroups = [
       { name: '西方星盘', path: '/tools/astro', icon: '\u2b50', desc: '本命星盘，十大行星，相位分析', bg: '/bg-astro.jpg' },
     ],
   },
+  {
+    title: '杂占',
+    tagline: '象数推演 · 万物可占',
+    items: [
+      { name: '皇极经世', path: '/tools/huangji', icon: '\ud83d\udc51', desc: '元会运世，声音律吕，推算历史兴衰', bg: '/bg-chinese.jpg' },
+      { name: '灵棋经', path: '/tools/lingqijing', icon: '\ud83c\udfb2', desc: '十二棋子投掷，一百二十五卦断吉凶', bg: '/bg-chinese.jpg' },
+      { name: '解梦', path: '/tools/jiemeng', icon: '\ud83c\udf19', desc: '周公解梦结合心理学，详细描述梦境AI解读', bg: '/bg-chinese.jpg' },
+      { name: '测字', path: '/tools/cezi', icon: '\u270d\ufe0f', desc: '拆字相字，笔画五行，一字一世界', bg: '/bg-chinese.jpg' },
+    ],
+  },
+  {
+    title: '择日通胜',
+    tagline: '择吉避凶 · 老黄历',
+    items: [
+      { name: '择日通胜', path: '/tongsheng', icon: '\ud83d\udcc5', desc: '建除十二神、黄道黑道、每日宜忌', bg: '/bg-chinese.jpg' },
+    ],
+  },
+  {
+    title: '哲学分析',
+    tagline: '唯物辩证 · 矛盾分析',
+    items: [
+      { name: '唯物辩证法', path: '/tools/dialectics', icon: '\u2696\ufe0f', desc: '以马克思主义矛盾分析法深度剖析事物', bg: '/bg-chinese.jpg' },
+    ],
+  },
 ];
 
 export default function Tools() {
@@ -68,6 +92,38 @@ export default function Tools() {
           <p className="text-lg text-white/60 max-w-lg mx-auto">
             融汇上古三式与东西方命理精华，在线排盘，AI智能解析
           </p>
+        </div>
+
+        {/* 使用指导卡片 */}
+        <div className="rounded-2xl border border-white/[0.06] p-5 sm:p-6 space-y-4 animate-fade-in" style={{ background: 'linear-gradient(135deg, rgba(251,191,36,0.03), rgba(168,85,247,0.02))' }}>
+          <div className="flex items-center gap-2">
+            <Lightbulb className="w-4 h-4 text-amber-400/60" />
+            <h2 className="text-sm font-semibold text-white/70" style={{ fontFamily: "'Noto Serif SC', serif" }}>不知道用哪个工具？</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {[
+              { icon: Target, q: '想看一生格局、大运走势', a: '八字排盘 / 紫微斗数', paths: ['/tools/bazi', '/tools/ziwei'], color: '#f59e0b' },
+              { icon: Compass, q: '有具体事情想问吉凶', a: '六爻起卦 / 梅花易数 / 小六壬', paths: ['/tools/liuyao', '/tools/meihua', '/tools/xiaoliuren'], color: '#06b6d4' },
+              { icon: Home, q: '买房装修看风水', a: '风水户型 / 玄空飞星', paths: ['/tools/fengshui', '/tools/xuankong'], color: '#10b981' },
+              { icon: User, q: '想了解面相运势', a: '相法AI解析', paths: ['/tools/mianxiang'], color: '#f97316' },
+              { icon: Star, q: '看西方占星', a: '西方星盘 / 塔罗牌', paths: ['/tools/astro', '/tools/tarot'], color: '#8b5cf6' },
+              { icon: Sparkles, q: '占国运、大事', a: '太乙神数 / 大六壬', paths: ['/tools/taiyi', '/tools/daliuren'], color: '#fbbf24' },
+            ].map((item, i) => (
+              <div key={i} className="rounded-xl border border-white/[0.04] p-3 space-y-1.5" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                <div className="flex items-center gap-1.5">
+                  <item.icon className="w-3 h-3" style={{ color: item.color, opacity: 0.6 }} />
+                  <span className="text-[11px] text-white/30">{item.q}</span>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {item.paths.map((p, j) => (
+                    <Link key={j} to={p} className="text-[11px] px-2 py-0.5 rounded-full transition-colors hover:opacity-100" style={{ background: `${item.color}10`, color: `${item.color}90`, border: `1px solid ${item.color}20` }}>
+                      {item.a.split(' / ')[j] || item.a}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Tool Groups */}
