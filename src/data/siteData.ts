@@ -18,6 +18,7 @@ export const navItems = [
       { label: '西方星盘', href: '/tools/astro' },
     ],
   },
+  { label: '命理小游戏', href: '/games' },
   { label: '命理社区', href: '/community' },
   { label: '我的', href: '/me' },
   { label: '关于黄师傅', href: '/about' },
