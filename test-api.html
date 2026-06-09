@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>API连接诊断</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:500px;margin:20px auto;padding:10px;background:#111;color:#fff}
+button{width:100%;padding:12px;margin:8px 0;border:none;border-radius:8px;font-size:16px;cursor:pointer}
+.test1{background:#2563eb;color:#fff}
+.test2{background:#16a34a;color:#fff}
+.test3{background:#dc2626;color:#fff}
+.log{background:#1a1a2e;padding:10px;border-radius:8px;margin:10px 0;font-size:13px;white-space:pre-wrap;word-break:break-all;max-height:300px;overflow:auto}
+.ok{color:#4ade80}
+.err{color:#f87171}
+</style>
+</head>
+<body>
+<h2>API连接诊断工具</h2>
+<p style="color:#888;font-size:13px">如果下面测试都失败，说明是当前浏览器/网络环境问题</p>
+
+<button class="test1" onclick="test1()">测试1: 轻量级API连通</button>
+<button class="test2" onclick="test2()">测试2: 完整AI对话</button>
+<button class="test3" onclick="test3()">测试3: XHR方式</button>
+<button style="background:#666;color:#fff" onclick="clearLog()">清除日志</button>
+
+<h3>诊断日志:</h3>
+<div class="log" id="log">点击上方按钮开始测试...</div>
+
+<script>
+const API_KEY = 'sk-exbzhkddusywrlknvkgdzcgjraluipqxhvquzeuwbyekdikl';
+const log = document.getElementById('log');
+
+function add(msg, isErr) {
+  const t = new Date().toLocaleTimeString();
+  const cls = isErr ? 'err' : 'ok';
+  log.innerHTML += `[${t}] <span class="${cls}">${msg}</span>\n`;
+}
+
+function clearLog(){ log.innerHTML = ''; }
+
+// 测试1: 轻量级GET请求
+async function test1() {
+  add('=== 测试1: GET /v1/models ===');
+  try {
+    const r = await fetch('https://api.siliconflow.cn/v1/models', {
+      headers: {'Authorization': 'Bearer ' + API_KEY}
+    });
+    if (r.ok) {
+      const d = await r.json();
+      add('✅ 成功! 可用模型:' + d.data.length + '个');
+    } else {
+      add('❌ HTTP失败: ' + r.status, true);
+      const t = await r.text();
+      add('响应:' + t.slice(0,200), true);
+    }
+  } catch(e) {
+    add('❌ fetch异常: ' + (e.message || e), true);
+    add('类型:' + (typeof e), true);
+  }
+}
+
+// 测试2: 完整POST对话
+async function test2() {
+  add('=== 测试2: POST /v1/chat/completions ===');
+  try {
+    const r = await fetch('https://api.siliconflow.cn/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + API_KEY
+      },
+      body: JSON.stringify({
+        model: 'deepseek-ai/DeepSeek-V4-Flash',
+        messages: [{role:'user',content:'你好'}],
+        max_tokens: 100
+      })
+    });
+    if (r.ok) {
+      const d = await r.json();
+      const c = d.choices?.[0]?.message?.content || '';
+      add('✅ 成功! 回复:' + c.slice(0,50));
+    } else {
+      add('❌ HTTP失败: ' + r.status, true);
+      const t = await r.text();
+      add('响应:' + t.slice(0,200), true);
+    }
+  } catch(e) {
+    add('❌ fetch异常: ' + (e.message || e), true);
+    add('类型:' + (typeof e), true);
+    add('对象:' + JSON.stringify(e, ['message','name','stack']), true);
+  }
+}
+
+// 测试3: XHR
+function test3() {
+  add('=== 测试3: XMLHttpRequest ===');
+  try {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', 'https://api.siliconflow.cn/v1/chat/completions', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.setRequestHeader('Authorization', 'Bearer ' + API_KEY);
+    xhr.timeout = 30000;
+    xhr.onload = function() {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        const d = JSON.parse(xhr.responseText);
+        const c = d.choices?.[0]?.message?.content || '';
+        add('✅ XHR成功! 回复:' + c.slice(0,50));
+      } else {
+        add('❌ XHR HTTP失败: ' + xhr.status, true);
+      }
+    };
+    xhr.onerror = function() { add('❌ XHR网络错误', true); };
+    xhr.ontimeout = function() { add('❌ XHR超时', true); };
+    xhr.send(JSON.stringify({
+      model: 'deepseek-ai/DeepSeek-V4-Flash',
+      messages: [{role:'user',content:'你好'}],
+      max_tokens: 100
+    }));
+  } catch(e) {
+    add('❌ XHR异常: ' + (e.message || e), true);
+  }
+}
+</script>
+</body>
+</html>

@@ -36,6 +36,15 @@ const NewPost = lazy(() => import('@/pages/community/NewPost'));
 const UserProfile = lazy(() => import('@/pages/community/UserProfile'));
 const Login = lazy(() => import('@/pages/Login'));
 const ApiKeyManage = lazy(() => import('@/pages/ApiKeyManage'));
+const Games = lazy(() => import('@/pages/Games'));
+const LifeSimTool = lazy(() => import('@/pages/tools/LifeSimTool'));
+const MasterGameTool = lazy(() => import('@/pages/tools/MasterGameTool'));
+const CeZiTool = lazy(() => import('@/pages/tools/CeZiTool'));
+const DialecticsTool = lazy(() => import('@/pages/tools/DialecticsTool'));
+const HuangJiTool = lazy(() => import('@/pages/tools/HuangJiTool'));
+const JieMengTool = lazy(() => import('@/pages/tools/JieMengTool'));
+const LingQiJingTool = lazy(() => import('@/pages/tools/LingQiJingTool'));
+const QiZhengTool = lazy(() => import('@/pages/tools/QiZhengTool'));
 
 function FacePages() {
   return <ContentPage pages={facePages} basePath="/face" category="面相篇" />;
@@ -115,6 +124,12 @@ export default function App() {
           <Route path="/tools/xuankong" element={<AuthGuard><XuanKongTool /></AuthGuard>} />
           <Route path="/tools/daliuren" element={<AuthGuard><DaLiuRenTool /></AuthGuard>} />
           <Route path="/tools/qimendifa" element={<AuthGuard><QiMenDiLiTool /></AuthGuard>} />
+          <Route path="/tools/cezi" element={<AuthGuard><CeZiTool /></AuthGuard>} />
+          <Route path="/tools/dialectics" element={<AuthGuard><DialecticsTool /></AuthGuard>} />
+          <Route path="/tools/huangji" element={<AuthGuard><HuangJiTool /></AuthGuard>} />
+          <Route path="/tools/jiemeng" element={<AuthGuard><JieMengTool /></AuthGuard>} />
+          <Route path="/tools/lingqijing" element={<AuthGuard><LingQiJingTool /></AuthGuard>} />
+          <Route path="/tools/qizheng" element={<AuthGuard><QiZhengTool /></AuthGuard>} />
 
           {/* Community - 浏览不需要登录，发帖/管理需要 */}
           <Route path="/community" element={<CommunityHome />} />
@@ -125,6 +140,11 @@ export default function App() {
           {/* About & Contact */}
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
+
+          {/* Games */}
+          <Route path="/games" element={<Games />} />
+          <Route path="/games/lifesim" element={<AuthGuard><LifeSimTool /></AuthGuard>} />
+          <Route path="/games/master" element={<AuthGuard><MasterGameTool /></AuthGuard>} />
 
           {/* Auth */}
           <Route path="/login" element={<Login />} />
