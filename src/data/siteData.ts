@@ -16,6 +16,7 @@ export const navItems = [
       { label: '相法AI解析', href: '/tools/mianxiang' },
       { label: '塔罗牌占卜', href: '/tools/tarot' },
       { label: '西方星盘', href: '/tools/astro' },
+      { label: '七政四余', href: '/tools/qizheng' },
       { label: '皇极经世', href: '/tools/huangji' },
       { label: '灵棋经', href: '/tools/lingqijing' },
       { label: '解梦', href: '/tools/jiemeng' },
