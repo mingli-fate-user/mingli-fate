@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
-import { AuthGuard } from '@/components/AuthGuard';
+
 import Home from '@/pages/Home';
 import { facePages, ziweiPages, liuyaoPages, xiaoliurenPages } from '@/data/siteData';
 import ContentPage from '@/pages/ContentPage';
@@ -34,8 +34,7 @@ const CommunityHome = lazy(() => import('@/pages/community/CommunityHome'));
 const PostDetail = lazy(() => import('@/pages/community/PostDetail'));
 const NewPost = lazy(() => import('@/pages/community/NewPost'));
 const UserProfile = lazy(() => import('@/pages/community/UserProfile'));
-const Login = lazy(() => import('@/pages/Login'));
-const ApiKeyManage = lazy(() => import('@/pages/ApiKeyManage'));
+const PersonalCenter = lazy(() => import('@/pages/PersonalCenter'));
 const Games = lazy(() => import('@/pages/Games'));
 const LifeSimTool = lazy(() => import('@/pages/tools/LifeSimTool'));
 const MasterGameTool = lazy(() => import('@/pages/tools/MasterGameTool'));
@@ -102,42 +101,42 @@ export default function App() {
           <Route path="/bookshelf" element={<Bookshelf />} />
 
           {/* API Key 管理 - 需要登录 */}
-          <Route path="/apikey" element={<AuthGuard><ApiKeyManage /></AuthGuard>} />
+          <Route path="/me" element={<PersonalCenter />} />
 
           {/* Personal Page - 需要登录 */}
-          <Route path="/me" element={<AuthGuard><PersonalPage /></AuthGuard>} />
+          <Route path="/me" element={<PersonalPage />} />
 
           {/* Tools - 列表可浏览，具体工具需登录 */}
           <Route path="/tools" element={<Tools />} />
-          <Route path="/tools/bazi" element={<AuthGuard><BaZiTool /></AuthGuard>} />
-          <Route path="/tools/ziwei" element={<AuthGuard><ZiWeiTool /></AuthGuard>} />
-          <Route path="/tools/meihua" element={<AuthGuard><MeiHuaTool /></AuthGuard>} />
-          <Route path="/tools/liuyao" element={<AuthGuard><LiuYaoTool /></AuthGuard>} />
-          <Route path="/tools/xiaoliuren" element={<AuthGuard><XiaoLiuRenTool /></AuthGuard>} />
-          <Route path="/tools/qimen" element={<AuthGuard><QiMenTool /></AuthGuard>} />
-          <Route path="/tools/chenggu" element={<AuthGuard><ChengGuTool /></AuthGuard>} />
-          <Route path="/tools/jinqiangua" element={<AuthGuard><JinQianGuaTool /></AuthGuard>} />
-          <Route path="/tools/mianxiang" element={<AuthGuard><MianXiangTool /></AuthGuard>} />
-          <Route path="/tools/tarot" element={<AuthGuard><TarotTool /></AuthGuard>} />
-          <Route path="/tools/astro" element={<AuthGuard><AstroTool /></AuthGuard>} />
-          <Route path="/tools/taiyi" element={<AuthGuard><TaiYiTool /></AuthGuard>} />
-          <Route path="/tools/fengshui" element={<AuthGuard><FengShuiDesigner /></AuthGuard>} />
-          <Route path="/tools/xuankong" element={<AuthGuard><XuanKongTool /></AuthGuard>} />
-          <Route path="/tools/daliuren" element={<AuthGuard><DaLiuRenTool /></AuthGuard>} />
-          <Route path="/tools/qimendifa" element={<AuthGuard><QiMenDiLiTool /></AuthGuard>} />
-          <Route path="/tools/cezi" element={<AuthGuard><CeZiTool /></AuthGuard>} />
-          <Route path="/tools/dialectics" element={<AuthGuard><DialecticsTool /></AuthGuard>} />
-          <Route path="/tongsheng" element={<AuthGuard><TongSheng /></AuthGuard>} />
-          <Route path="/tools/huangji" element={<AuthGuard><HuangJiTool /></AuthGuard>} />
-          <Route path="/tools/jiemeng" element={<AuthGuard><JieMengTool /></AuthGuard>} />
-          <Route path="/tools/lingqijing" element={<AuthGuard><LingQiJingTool /></AuthGuard>} />
-          <Route path="/tools/qizheng" element={<AuthGuard><QiZhengTool /></AuthGuard>} />
+          <Route path="/tools/bazi" element={<BaZiTool />} />
+          <Route path="/tools/ziwei" element={<ZiWeiTool />} />
+          <Route path="/tools/meihua" element={<MeiHuaTool />} />
+          <Route path="/tools/liuyao" element={<LiuYaoTool />} />
+          <Route path="/tools/xiaoliuren" element={<XiaoLiuRenTool />} />
+          <Route path="/tools/qimen" element={<QiMenTool />} />
+          <Route path="/tools/chenggu" element={<ChengGuTool />} />
+          <Route path="/tools/jinqiangua" element={<JinQianGuaTool />} />
+          <Route path="/tools/mianxiang" element={<MianXiangTool />} />
+          <Route path="/tools/tarot" element={<TarotTool />} />
+          <Route path="/tools/astro" element={<AstroTool />} />
+          <Route path="/tools/taiyi" element={<TaiYiTool />} />
+          <Route path="/tools/fengshui" element={<FengShuiDesigner />} />
+          <Route path="/tools/xuankong" element={<XuanKongTool />} />
+          <Route path="/tools/daliuren" element={<DaLiuRenTool />} />
+          <Route path="/tools/qimendifa" element={<QiMenDiLiTool />} />
+          <Route path="/tools/cezi" element={<CeZiTool />} />
+          <Route path="/tools/dialectics" element={<DialecticsTool />} />
+          <Route path="/tongsheng" element={<TongSheng />} />
+          <Route path="/tools/huangji" element={<HuangJiTool />} />
+          <Route path="/tools/jiemeng" element={<JieMengTool />} />
+          <Route path="/tools/lingqijing" element={<LingQiJingTool />} />
+          <Route path="/tools/qizheng" element={<QiZhengTool />} />
 
           {/* Community - 浏览不需要登录，发帖/管理需要 */}
           <Route path="/community" element={<CommunityHome />} />
           <Route path="/community/post/:id" element={<PostDetail />} />
-          <Route path="/community/new" element={<AuthGuard><NewPost /></AuthGuard>} />
-          <Route path="/community/profile" element={<AuthGuard><UserProfile /></AuthGuard>} />
+          <Route path="/community/new" element={<NewPost />} />
+          <Route path="/community/profile" element={<UserProfile />} />
 
           {/* About & Contact */}
           <Route path="/about" element={<About />} />
@@ -145,11 +144,10 @@ export default function App() {
 
           {/* Games */}
           <Route path="/games" element={<Games />} />
-          <Route path="/games/lifesim" element={<AuthGuard><LifeSimTool /></AuthGuard>} />
-          <Route path="/games/master" element={<AuthGuard><MasterGameTool /></AuthGuard>} />
+          <Route path="/games/lifesim" element={<LifeSimTool />} />
+          <Route path="/games/master" element={<MasterGameTool />} />
 
           {/* Auth */}
-          <Route path="/login" element={<Login />} />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />

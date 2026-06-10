@@ -1,10 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, LogOut, LogIn, User, Key } from 'lucide-react';
+import { Menu, X, Key } from 'lucide-react';
 import ApiKeyPrompt from './ApiKeyPrompt';
 import { navItems } from '@/data/siteData';
 import { getToolColorFromPath, HOME_THEME, NAV_COLORS, NAV_HOVER_COLORS } from '@/data/toolColors';
-import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import Toast from '@/components/Toast';
 
@@ -19,8 +18,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
-  const { user, isAuthenticated, logout } = useAuth();
-  const { toast, showToast } = useToast();
+    const { toast, showToast } = useToast();
 
   const toolColor = useMemo(() => getToolColorFromPath(location.pathname), [location.pathname]);
   const isToolPage = !!toolColor;
@@ -114,37 +112,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
             {/* Auth + Mobile Menu */}
             <div className="flex items-center gap-2">
-              {isAuthenticated ? (
-                <div className="hidden lg:flex items-center gap-2">
-                  <Link to="/apikey" className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all text-sm ${
-                    isToolPage ? `${toolColor.navText} hover:${toolColor.navTextActive} hover:bg-white/10` : 'text-white/60 hover:text-white hover:bg-white/10'
-                  }`} title="AI解析设置">
-                    <Key className={`w-3.5 h-3.5 ${isToolPage ? toolColor.iconColor : 'text-white'}`} />
-                  </Link>
-                  <Link to="/me" className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all text-sm ${
-                    isToolPage ? `${toolColor.navText} hover:${toolColor.navTextActive} hover:bg-white/10` : 'text-white/60 hover:text-white hover:bg-white/10'
-                  }`}>
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center ${isToolPage ? toolColor.badgeBg : 'bg-white/20'}`}>
-                      <User className={`w-3.5 h-3.5 ${isToolPage ? toolColor.iconColor : 'text-white'}`} />
-                    </div>
-                    <span>{user?.nickname || user?.username}</span>
-                  </Link>
-                  <button onClick={logout} className={`p-2 rounded-full transition-all ${
-                    isToolPage ? `${toolColor.navText} hover:text-red-400 hover:bg-red-500/10` : 'text-white/50 hover:text-red-300 hover:bg-white/10'
-                  }`}>
-                    <LogOut className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                <Link to="/login" className={`hidden lg:flex items-center gap-1.5 px-4 py-2 rounded-full backdrop-blur text-sm font-medium transition-all ${
-                  isToolPage
-                    ? `${toolColor.badgeBg} ${toolColor.navBorder} border ${toolColor.navTextActive} hover:${toolColor.navTextActive}`
-                    : 'bg-white/20 border-white/20 border text-white/90 hover:bg-white/30'
-                }`}>
-                  <LogIn className="w-3.5 h-3.5" />
-                  登录
-                </Link>
-              )}
+              
 
               <button
                 onClick={() => setMobileOpen(!mobileOpen)}
@@ -180,17 +148,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </Link>
               );
             })}
-            <div className="pt-3 border-t border-white/20">
-              {isAuthenticated ? (
-                <button onClick={() => { logout(); setMobileOpen(false); }} className="w-full flex items-center gap-2 px-4 py-3 rounded-xl text-base text-pink-400 hover:bg-pink-500/10 transition-colors">
-                  <LogOut className="w-4 h-4" /> 退出登录
-                </button>
-              ) : (
-                <Link to="/login" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 px-4 py-3 rounded-xl text-base text-blue-400 hover:bg-blue-500/10 transition-colors">
-                  <LogIn className="w-4 h-4" /> 登录 / 注册
-                </Link>
-              )}
-            </div>
+
           </div>
         </div>
       )}

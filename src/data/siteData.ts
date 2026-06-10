@@ -25,8 +25,8 @@ export const navItems = [
     ],
   },
   { label: '命理小游戏', href: '/games' },
+  { label: '个人中心', href: '/me' },
   { label: '命理社区', href: '/community' },
-  { label: '我的', href: '/me' },
   { label: '关于黄师傅', href: '/about' },
   { label: '联系咨询', href: '/contact' },
 ];

@@ -17,10 +17,40 @@ import {
   makeMeiHuaAnswerPrompt, makeMeiHuaScorePrompt,
   parseScoreJSON, parseAIAnswerJSON, parseLiuYaoAnswerJSON, parseGuaScoreJSON,
 } from '@/data/masterGame';
+import SaveRecordButton from '@/components/SaveRecordButton';
 import {
   getGuaLines, getGuaComponents, getBianGua, getHuGua,
   GUA_WUXING, getLiuShen, NA_JIA, DI_ZHI_WX, getGuaUnicode,
 } from '@/data/guaGraphics';
+
+// ===== 紫微斗数排盘常量（和ZiWeiTool完全一致）=====
+const DI_ZHI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+
+const XING_COLOR: Record<string, string> = {
+  '紫微': 'text-purple-400 font-bold', '天府': 'text-yellow-400 font-bold',
+  '太阳': 'text-orange-400', '太阴': 'text-blue-300',
+  '天机': 'text-green-400', '武曲': 'text-gray-300',
+  '天同': 'text-pink-400', '廉贞': 'text-red-400',
+  '贪狼': 'text-pink-500', '巨门': 'text-yellow-600',
+  '天相': 'text-teal-400', '天梁': 'text-indigo-400',
+  '七杀': 'text-red-500 font-bold', '破军': 'text-red-600 font-bold',
+  '文昌': 'text-green-300', '文曲': 'text-blue-300',
+  '左辅': 'text-green-400', '右弼': 'text-purple-300',
+  '天魁': 'text-yellow-300', '天钺': 'text-yellow-400',
+  '禄存': 'text-yellow-500 font-bold',
+  '擎羊': 'text-red-400', '陀罗': 'text-white/75',
+  '火星': 'text-red-500', '铃星': 'text-orange-500',
+  '地空': 'text-white/60', '地劫': 'text-white/60',
+  '天马': 'text-blue-400',
+};
+
+// 紫微斗数十二宫标准排列（从寅开始逆时针）
+const PALACE_LAYOUT: { diZhiIdx: number; name: string }[] = [
+  { diZhiIdx: 5, name: '巳' }, { diZhiIdx: 6, name: '午' }, { diZhiIdx: 7, name: '未' }, { diZhiIdx: 8, name: '申' },
+  { diZhiIdx: 4, name: '辰' }, { diZhiIdx: 9, name: '酉' },
+  { diZhiIdx: 3, name: '卯' }, { diZhiIdx: 10, name: '戌' },
+  { diZhiIdx: 2, name: '寅' }, { diZhiIdx: 1, name: '丑' }, { diZhiIdx: 0, name: '子' }, { diZhiIdx: 11, name: '亥' },
+];
 
 declare global { interface Window { Lunar: any; } }
 
@@ -246,51 +276,116 @@ function BaZiPan({ info, result }: { info: BaziInfo; result: any }) {
   );
 }
 
-// 紫微12宫
-function ZiWeiPan({ info, palaces }: { info: BaziInfo; palaces: any[] }) {
+// 紫微12宫 — 4x4标准布局（和ZiWeiTool完全一致）
+function ZiWeiPan({ info, palaces, panMeta }: { info: BaziInfo; palaces: any[]; panMeta: any }) {
   if (!palaces.length) {
     return (
       <div className="text-center text-[11px] text-white/30 py-8">
         <Info className="w-5 h-5 mx-auto mb-2 opacity-30" />
-        紫微斗数排盘库加载中...<br/>
+        紫微斗数排盘中...<br/>
         生辰：{info.year}年{info.month}月{info.day}日 {info.hour}时 · {info.gender === 'male' ? '男' : '女'}
       </div>
     );
   }
 
-  const palaceNames = ['命宫','父母','福德','田宅','事业','交友','迁移','疾厄','财帛','子女','夫妻','兄弟'];
-  const palaceColor = (name: string) => {
-    if (name === '命宫') return '#fbbf24';
-    if (['财帛','事业'].includes(name)) return '#4ade80';
-    if (['夫妻','子女'].includes(name)) return '#f472b6';
-    return 'rgba(255,255,255,0.35)';
-  };
+  // 按PALACE_LAYOUT顺序排列十二宫
+  const orderedPalaces = PALACE_LAYOUT.map(layout => {
+    const found = palaces.find((p: any) => p.diZhiName === layout.name || p.position === DI_ZHI[layout.diZHiIdx]);
+    return found || { name: '', diZhiName: layout.name, position: DI_ZHI[layout.diZhiIdx], majorStars: [], minorStars: [], heavenlyStem: '' };
+  });
+
+  const soul = panMeta.soul || '';
+  const body = panMeta.body || '';
+
+  // 渲染单个宫位卡片（和ZiWeiTool同款）
+  function renderPalaceCard(palace: any, layoutIdx: number) {
+    const isMing = palace.name === soul;
+    const isShen = palace.name === body;
+    const majorStars = palace.majorStars || [];
+    const minorStars = palace.minorStars || [];
+    return (
+      <div key={layoutIdx} className={`relative border rounded-lg p-1.5 sm:p-2 overflow-hidden ${
+        isMing ? 'border-purple-500/60 bg-gradient-to-br from-purple-500/10 to-purple-900/5' :
+        isShen ? 'border-purple-500/30 bg-gradient-to-br from-purple-900/10 to-purple-900/3' :
+        'border-white/10 bg-white/[0.02]'
+      }`} style={{ minHeight: '85px' }}>
+        {/* 宫头信息 */}
+        <div className="flex justify-between items-start mb-0.5">
+          <div className="flex items-center gap-0.5">
+            <span className={`text-[9px] sm:text-[10px] font-bold ${isMing ? 'text-purple-400' : isShen ? 'text-purple-300' : 'text-white/60'}`}>
+              {palace.diZhiName}{palace.name}
+            </span>
+            {isMing && <span className="text-[7px] px-0.5 py-0.5 bg-purple-500/30 text-purple-400 rounded">命</span>}
+            {isShen && <span className="text-[7px] px-0.5 py-0.5 bg-purple-500/20 text-purple-300 rounded">身</span>}
+          </div>
+        </div>
+        {/* 天干地支 */}
+        <div className="text-[8px] text-white/40 mb-0.5">{palace.position}{palace.heavenlyStem || ''}</div>
+        {/* 主星 */}
+        <div className="flex flex-wrap gap-x-1 gap-y-0">
+          {majorStars.map((star: string, i: number) => (
+            <span key={i} className={`text-[9px] sm:text-[10px] ${XING_COLOR[star] || 'text-white/75'}`}>{star}</span>
+          ))}
+        </div>
+        {/* 辅星 */}
+        {minorStars.length > 0 && (
+          <div className="flex flex-wrap gap-x-0.5 gap-y-0 mt-0.5">
+            {minorStars.slice(0, 5).map((star: string, i: number) => (
+              <span key={i} className={`text-[8px] ${XING_COLOR[star] || 'text-white/50'}`}>{star}</span>
+            ))}
+          </div>
+        )}
+        {/* 空宫 */}
+        {majorStars.length === 0 && minorStars.length === 0 && (
+          <span className="text-[9px] text-white/10">空宫</span>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
+      {/* 命盘头部 */}
       <div className="text-center text-[11px] text-white/40">
         公历 {info.year}年{info.month}月{info.day}日 {info.hour}时 · {info.gender === 'male' ? '男' : '女'}命
+        {panMeta.fiveElements && <span> · 五行局：{panMeta.fiveElements}</span>}
       </div>
-      <div className="grid grid-cols-3 gap-1.5">
-        {palaces.map((p, i) => (
-          <div key={i} className="rounded-lg border p-2" style={{
-            background: p.name === '命宫' ? 'rgba(251,191,36,0.05)' : 'rgba(255,255,255,0.02)',
-            borderColor: p.name === '命宫' ? 'rgba(251,191,36,0.15)' : 'rgba(255,255,255,0.04)',
-          }}>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-bold" style={{ color: palaceColor(p.name || palaceNames[i]) }}>{p.name || palaceNames[i]}</span>
-              <span className="text-[8px]" style={{ color: 'rgba(255,255,255,0.2)' }}>{p.position || ''}</span>
+
+      {/* 4x4标准十二宫 */}
+      <div className="border border-white/10 rounded-xl p-2 sm:p-3 bg-white/[0.01]">
+        <div className="grid grid-cols-4 gap-1 sm:gap-1.5">
+          {/* 第一行: 巳 午 未 申 */}
+          {renderPalaceCard(orderedPalaces[0], 0)}
+          {renderPalaceCard(orderedPalaces[1], 1)}
+          {renderPalaceCard(orderedPalaces[2], 2)}
+          {renderPalaceCard(orderedPalaces[3], 3)}
+
+          {/* 第二行: 辰 [中心] 酉 */}
+          {renderPalaceCard(orderedPalaces[4], 4)}
+          {/* 中心区域 */}
+          <div className="col-span-2 row-span-2 border border-purple-500/20 rounded-lg bg-gradient-to-br from-purple-500/5 to-slate-900/5 flex flex-col items-center justify-center p-2 text-center relative overflow-hidden">
+            <div className="absolute inset-0 opacity-5 bg-[radial-gradient(circle_at_center,#a855f7_1px,transparent_1px)] bg-[length:10px_10px]" />
+            <p className="text-purple-400 font-bold text-xs sm:text-sm mb-0.5 relative z-10">紫微斗数命盘</p>
+            <p className="text-white/40 text-[9px] relative z-10">{panMeta.chineseDate || `${info.year}年${info.month}月${info.day}日`}</p>
+            <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px] mt-1 relative z-10">
+              <span className="text-white/50">命宫:</span><span className="text-purple-400">{soul || '?'}</span>
+              <span className="text-white/50">身宫:</span><span className="text-purple-300">{body || '?'}</span>
+              <span className="text-white/50">命主:</span><span className="text-purple-400">{panMeta.soulStar || '?'}</span>
+              <span className="text-white/50">身主:</span><span className="text-blue-400">{panMeta.bodyStar || '?'}</span>
             </div>
-            <div className="text-[10px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.45)' }}>
-              {(p.majorStars || []).slice(0, 3).join('、') || <span style={{ color: 'rgba(255,255,255,0.15)' }}>无主星</span>}
-            </div>
-            {(p.minorStars || []).length > 0 && (
-              <div className="text-[8px] mt-0.5" style={{ color: 'rgba(255,255,255,0.2)' }}>
-                {(p.minorStars || []).slice(0, 3).join(' ')}
-              </div>
-            )}
           </div>
-        ))}
+          {renderPalaceCard(orderedPalaces[5], 5)}
+
+          {/* 第三行: 卯 [中心继续] 戌 */}
+          {renderPalaceCard(orderedPalaces[6], 6)}
+          {renderPalaceCard(orderedPalaces[7], 7)}
+
+          {/* 第四行: 寅 丑 子 亥 */}
+          {renderPalaceCard(orderedPalaces[8], 8)}
+          {renderPalaceCard(orderedPalaces[9], 9)}
+          {renderPalaceCard(orderedPalaces[10], 10)}
+          {renderPalaceCard(orderedPalaces[11], 11)}
+        </div>
       </div>
     </div>
   );
@@ -323,6 +418,7 @@ export default function MasterGameTool() {
   const [baziResult, setBaziResult] = useState<any>(null);
   const [baziInfo, setBaziInfo] = useState<BaziInfo | null>(null);
   const [ziweiPalaces, setZiweiPalaces] = useState<any[]>([]);
+  const [panMeta, setPanMeta] = useState<any>({});
 
   const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
   const [userGuaAnalysis, setUserGuaAnalysis] = useState('');
@@ -361,6 +457,7 @@ export default function MasterGameTool() {
     setGuaScoreResult(null);
     setBaziResult(null);
     setZiweiPalaces([]);
+    setPanMeta({});
     setGuaInfo(null);
     gameIdRef.current = '';
 
@@ -422,7 +519,7 @@ export default function MasterGameTool() {
     setPhase('display');
   }
 
-  // ===== 紫微：优先iztro，失败则用AI排盘 =====
+  // ===== 紫微：用iztro bySolar排盘（和ZiWeiTool一致）=====
   async function startZiWei() {
     const info = generateRandomBazi();
     setBaziInfo(info);
@@ -432,110 +529,127 @@ export default function MasterGameTool() {
 
     setLoadingText('正在排紫微命盘...');
 
-    // 先用八字算日主
-    let dayGan = '戊';
-    try {
-      const L = window.Lunar;
-      if (L) {
-        const lunar = L.fromYmdHms(info.year, info.month, info.day, info.hour, 0, 0);
-        dayGan = lunar.getEightChar().getDay()[0];
-      }
-    } catch { /* default */ }
-
     let palaces: any[] = [];
+    let meta: any = {};
 
-    // 尝试iztro（3秒超时）
+    // 尝试iztro（4秒超时），和ZiWeiTool一样用bySolar
     try {
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000));
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000));
       const astro: any = await Promise.race([loadIztro(), timeoutPromise]);
-      if (astro && astro.astrolabeBySolarDate) {
-        const a = astro.astrolabeBySolarDate(`${info.year}-${String(info.month).padStart(2,'0')}-${String(info.day).padStart(2,'0')}`, info.hour, genderText);
-        palaces = (a.palaces || []).map((p: any) => ({
-          name: p.name || '', position: p.earthBranch || '',
-          majorStars: (p.majorStars || []).map((s: any) => s.name || s),
-          minorStars: (p.minorStars || []).map((s: any) => s.name || s),
-          score: p.score,
-        }));
-      }
-    } catch { /* fallback */ }
+      if (astro && astro.astro && astro.astro.bySolar) {
+        const hourIdx = Math.floor(info.hour / 2) % 12;
+        const a = astro.astro.bySolar(`${info.year}-${String(info.month).padStart(2,'0')}-${String(info.day).padStart(2,'0')}`, hourIdx, genderText, true, 'zh-CN');
 
-    // iztro失败 → AI排盘
+        // 提取命盘元信息
+        meta = {
+          soul: a.soul || '',
+          body: a.body || '',
+          soulStar: a.soulStar || '',
+          bodyStar: a.bodyStar || '',
+          fiveElements: a.fiveElementsClass || '',
+          chineseDate: a.chineseDate || '',
+          zodiac: a.zodiac || '',
+          mutagens: a.mutagens || {},
+        };
+
+        // 提取十二宫数据，包含完整地支信息
+        if (a.palaces && a.palaces.length === 12) {
+          palaces = a.palaces.map((p: any) => ({
+            name: p.name || '',
+            diZhiName: p.earthlyBranch ? p.earthlyBranch.substring(0, 1) : '',
+            position: p.earthlyBranch || '',
+            heavenlyStem: p.heavenlyStem || '',
+            majorStars: (p.majorStars || []).map((s: any) => typeof s === 'string' ? s : (s.name || '')),
+            minorStars: (p.minorStars || []).map((s: any) => typeof s === 'string' ? s : (s.name || '')),
+            decadal: p.decadal || null,
+          }));
+        }
+      }
+    } catch { /* fallback to AI */ }
+
+    // iztro失败 → AI排完整十二宫
     if (palaces.length === 0) {
       setLoadingText('AI正在排紫微命盘...');
       try {
         const aiPanResponse = await callSiliconAPIWithRetry([
-          { role: 'system', content: '你是黄师傅，精通紫微斗数排盘。请为以下生辰排出完整的紫微斗数十二宫命盘。' + NO_MARKDOWN_RULE },
+          { role: 'system', content: '你是黄师傅，精通紫微斗数排盘。请严格按格式输出。' + NO_MARKDOWN_RULE },
           { role: 'user', content: `请为以下生辰排紫微斗数命盘：
-公历 ${info.year}年${info.month}月${info.day}日 ${info.hour}时
-性别：${genderText}
-日主：${dayGan}
+公历 ${info.year}年${info.month}月${info.day}日 ${info.hour}时 性别：${genderText}
 
-请输出以下格式的十二宫数据（纯文本，每行一个宫位）：
-命宫：[主星1]、[主星2] |位置[地支]
-父母：[主星] |位置[地支]
-福德：[主星] |位置[地支]
-田宅：[主星] |位置[地支]
-事业：[主星] |位置[地支]
-交友：[主星] |位置[地支]
-迁移：[主星] |位置[地支]
-疾厄：[主星] |位置[地支]
-财帛：[主星] |位置[地支]
-子女：[主星] |位置[地支]
-夫妻：[主星] |位置[地支]
-兄弟：[主星] |位置[地支]
+请输出JSON格式：
+{
+  "soul": "命宫所在地支（一个汉字）",
+  "body": "身宫所在地支（一个汉字）",
+  "soulStar": "命主星",
+  "bodyStar": "身主星",
+  "fiveElements": "五行局如金四局",
+  "chineseDate": "农历日期",
+  "palaces": [
+    {"name": "命宫", "diZhiName": "地支如寅", "position": "丙寅", "heavenlyStem": "丙", "majorStars": ["紫微", "天府"], "minorStars": ["文昌"]},
+    ...共12个宫位，按命宫、兄弟、夫妻、子女、财帛、疾厄、迁移、交友、事业、田宅、福德、父母顺序
+  ]
+}
 
-每个宫位至少填一个主星，不能为空。` },
-        ], { maxTokens: 1500, temperature: 0.3 });
+要求：
+1. 每个宫位必须有name、diZhiName（单字地支）、position（如丙寅）、heavenlyStem（天干）、majorStars（主星数组）、minorStars（辅星数组）
+2. majorStars不能为空，至少填一颗主星
+3. diZhiName必须是十二地支之一：子丑寅卯辰巳午未申酉戌亥
+4. 只输出JSON，不要其他文字` },
+        ], { maxTokens: 2000, temperature: 0.2 });
 
-        // 解析AI返回
-        const nameMap: Record<string, string> = {
-          '命宫': '命宫', '父母': '父母', '福德': '福德', '田宅': '田宅',
-          '事业': '事业', '交友': '交友', '迁移': '迁移', '疾厄': '疾厄',
-          '财帛': '财帛', '子女': '子女', '夫妻': '夫妻', '兄弟': '兄弟',
-        };
-        for (const line of aiPanResponse.split('\n')) {
-          for (const [key, name] of Object.entries(nameMap)) {
-            if (line.includes(key)) {
-              const content = line.split(/[：:]/)[1] || '';
-              const parts = content.split('|');
-              const starsText = parts[0] || '';
-              const posText = parts[1] || '';
-              const starList = starsText.split(/[、,，]/).map(s => s.trim()).filter(s => s && s !== '无主星');
-              const posMatch = posText.match(/[子丑寅卯辰巳午未申酉戌亥]/);
-              palaces.push({ name, position: posMatch ? posMatch[0] : '', majorStars: starList.length > 0 ? starList : ['天机'], minorStars: [] });
-              break;
-            }
+        const m = aiPanResponse.match(/\{[\s\S]*\}/);
+        if (m) {
+          const d = JSON.parse(m[0]);
+          meta = {
+            soul: d.soul || '', body: d.body || '',
+            soulStar: d.soulStar || '', bodyStar: d.bodyStar || '',
+            fiveElements: d.fiveElements || '', chineseDate: d.chineseDate || '',
+          };
+          if (d.palaces && d.palaces.length > 0) {
+            palaces = d.palaces.map((p: any) => ({
+              name: p.name || '', diZhiName: p.diZhiName || '',
+              position: p.position || '', heavenlyStem: p.heavenlyStem || '',
+              majorStars: p.majorStars || [], minorStars: p.minorStars || [],
+            }));
           }
         }
       } catch { /* use default */ }
     }
 
-    // 兜底默认值
-    if (palaces.length === 0) {
-      const defaults: Record<string, string[]> = {
-        '命宫': ['紫微', '天府'], '父母': ['太阳'], '福德': ['天同'], '田宅': ['武曲'],
-        '事业': ['廉贞', '天相'], '交友': ['天机'], '迁移': ['贪狼'], '疾厄': ['巨门'],
-        '财帛': ['太阴'], '子女': ['天梁'], '夫妻': ['七杀'], '兄弟': ['破军'],
-      };
-      palaces = Object.entries(defaults).map(([name, stars]) => ({ name, position: '', majorStars: stars, minorStars: [] }));
+    // 兜底：如果还是不够12个，补充默认值
+    if (palaces.length < 12) {
+      const defaultNames = ['命宫', '兄弟', '夫妻', '子女', '财帛', '疾厄', '迁移', '交友', '事业', '田宅', '福德', '父母'];
+      const defaultStars = ['紫微', '天府', '太阳', '武曲', '天同', '廉贞', '天机', '贪狼', '巨门', '天相', '天梁', '七杀'];
+      for (let i = palaces.length; i < 12; i++) {
+        palaces.push({
+          name: defaultNames[i] || '', diZhiName: DI_ZHI[i] || '',
+          position: '', heavenlyStem: '',
+          majorStars: [defaultStars[i] || '天机'], minorStars: [],
+        });
+      }
     }
 
-    setPillar(`紫微命，${genderText}命`);
+    setPillar(`紫微${meta.soul || ''}命，${meta.fiveElements || ''}局`);
     setPattern('紫微斗数');
     setZiweiPalaces(palaces);
+    setPanMeta(meta);
 
     setLoadingText('AI正在隐藏标准答案...');
-    const panDesc = palaces.map(p => `${p.name}：${(p.majorStars || []).join('、')}`).join('\n');
+    const panDesc = palaces.map(p => `${p.diZhiName}${p.name}：${(p.majorStars || []).join('、')}`).join('\n');
 
-    const answerPrompt = `你是黄师傅，紫微斗数宗师。请严格分析以下紫微命盘，输出JSON：
+    const answerPrompt = `你是黄师傅，紫微斗数宗师。请分析以下紫微命盘，输出JSON：
 
 【生辰】${info.year}年${info.month}月${info.day}日 ${info.hour}时
 【性别】${genderText}
-【命盘】${panDesc}
+【命宫】${meta.soul || ''}
+【命主】${meta.soulStar || ''}
+【五行局】${meta.fiveElements || ''}
+【命盘】
+${panDesc}
 
 输出JSON格式：
 {
-  "overallPattern": "此命紫微格局总评，200字左右，从命宫主星、三方四正来论断",
+  "overallPattern": "此命紫微格局总评，200字左右",
   "wealth": "财运分析，80字左右",
   "marriage": "婚姻分析，80字左右",
   "friendship": "交友分析，80字左右",
@@ -546,7 +660,7 @@ export default function MasterGameTool() {
 只输出JSON。`;
 
     const answerResponse = await callSiliconAPIWithRetry([
-      { role: 'system', content: '你是黄师傅，紫微斗数宗师。请严格分析输出JSON。只输出JSON。' + NO_MARKDOWN_RULE },
+      { role: 'system', content: '你是黄师傅，紫微斗数宗师。请分析输出JSON。只输出JSON。' + NO_MARKDOWN_RULE },
       { role: 'user', content: answerPrompt },
     ], { maxTokens: 2000, temperature: 0.3 });
     setAiAnswer(parseAIAnswerJSON(answerResponse) || { overallPattern: 'AI分析中...', wealth: '', marriage: '', friendship: '', career: '', family: '', parents: '' });
@@ -675,6 +789,7 @@ export default function MasterGameTool() {
     setGuaInfo(null);
     setBaziResult(null);
     setZiweiPalaces([]);
+    setPanMeta({});
     setAiAnswer(null);
     setAiGuaAnswer(null);
     setScoreResult(null);
@@ -784,7 +899,7 @@ export default function MasterGameTool() {
                 {/* 八字：代码排四柱 */}
                 {mode === 'bazi' && baziInfo && baziResult && <BaZiPan info={baziInfo} result={baziResult} />}
                 {/* 紫微：代码排12宫 */}
-                {mode === 'ziwei' && baziInfo && <ZiWeiPan info={baziInfo} palaces={ziweiPalaces} />}
+                {mode === 'ziwei' && baziInfo && <ZiWeiPan info={baziInfo} palaces={ziweiPalaces} panMeta={panMeta} />}
                 {/* 六爻：代码排卦画 */}
                 {mode === 'liuyao' && guaInfo && <LiuYaoPan guaInfo={guaInfo} />}
                 {/* 梅花：代码排三卦 */}
@@ -814,7 +929,7 @@ export default function MasterGameTool() {
             <div className="px-4 pb-3">
               <div className="rounded-lg p-3 border" style={{ background: 'rgba(0,0,0,0.2)', borderColor: 'rgba(255,255,255,0.03)' }}>
                 {mode === 'bazi' && baziInfo && baziResult && <BaZiPan info={baziInfo} result={baziResult} />}
-                {mode === 'ziwei' && baziInfo && <ZiWeiPan info={baziInfo} palaces={ziweiPalaces} />}
+                {mode === 'ziwei' && baziInfo && <ZiWeiPan info={baziInfo} palaces={ziweiPalaces} panMeta={panMeta} />}
                 {mode === 'liuyao' && guaInfo && <LiuYaoPan guaInfo={guaInfo} />}
                 {mode === 'meihua' && guaInfo && <MeiHuaPan guaInfo={guaInfo} />}
               </div>
@@ -977,6 +1092,24 @@ export default function MasterGameTool() {
               ))}
             </div>
           )}
+
+          {/* 保存考核记录 */}
+          <div className="flex justify-center">
+            <SaveRecordButton
+              type="mastergame"
+              typeLabel={mode === 'bazi' || mode === 'ziwei' ? '我是大师-命理考核' : '我是大师-断卦考核'}
+              data={{
+                mode,
+                pillar,
+                pattern,
+                gender,
+                score: scoreResult ? scoreResult.total : guaScoreResult ? guaScoreResult.total : 0,
+                grade: scoreResult?.grade || guaScoreResult?.grade || '',
+                ...(scoreResult ? { overallPattern: scoreResult.overallPattern, wealth: scoreResult.wealth } : {}),
+                ...(guaScoreResult ? { analysisScore: guaScoreResult.analysisScore, resultScore: guaScoreResult.resultScore } : {}),
+              } as unknown as Record<string, unknown>}
+            />
+          </div>
 
           <div className="flex gap-3">
             <button onClick={restart} className="flex-1 py-3.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.3)' }}>

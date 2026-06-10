@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, BookOpen, MessageSquare, User, ChevronRight, LogIn, X, Gamepad2 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { Sparkles, BookOpen, MessageSquare, User, ChevronRight, Gamepad2 } from 'lucide-react';
 
 // 工具颜色配置 - 每个工具有独特的鲜艳颜色
 const T = {
@@ -34,7 +33,7 @@ const featureCards = [
   { icon: BookOpen, title: '系统学习', desc: '从零基础到进阶的完整命理学习体系', link: '/study', c: T.emerald },
   { icon: Gamepad2, title: '命理小游戏', desc: '命理人生模拟器、我是大师考核，边玩边学', link: '/games', c: T.orange },
   { icon: MessageSquare, title: '命理社区', desc: '与志同道合的朋友一起探讨命理知识', link: '/community', c: T.fuchsia },
-  { icon: User, title: '个人中心', desc: '保存排盘记录，管理你的命理档案', link: '/me', c: T.pink },
+  { icon: User, title: '个人中心', desc: '查看保存记录、管理API密钥', link: '/me', c: T.pink },
 ];
 
 const specialtyTags = [
@@ -45,64 +44,109 @@ const specialtyTags = [
 ];
 
 export default function Home() {
-  const { isLoggedIn } = useAuth();
-  const [showBanner, setShowBanner] = useState(!isLoggedIn);
+
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
 
   return (
     <div className={`transition-opacity duration-700 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
-      {/* Login Banner */}
-      {showBanner && !isLoggedIn && (
-        <div className="bg-blue-500/10 backdrop-blur-md border-b border-blue-400/20 px-4 py-3 animate-fade-in">
-          <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 text-sm">
-              <Sparkles className="w-4 h-4 text-blue-400 flex-shrink-0" />
-              <span className="text-blue-200/70">登录即可使用十大排盘工具，云端保存记录</span>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <Link to="/login" className="px-4 py-1.5 rounded-full bg-blue-500 text-white text-sm font-medium hover:bg-blue-400 transition-colors shadow-lg shadow-blue-500/20">登录</Link>
-              <button onClick={() => setShowBanner(false)} className="p-1 text-white/40 hover:text-white/60"><X className="w-4 h-4" /></button>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Hero Section - 彩色大字体 */}
-      <section className="px-4 sm:px-6 pt-20 pb-24 overflow-hidden">
-        <div className="max-w-6xl mx-auto relative">
-          <div className="flex flex-col items-center text-center space-y-10">
-            {/* Avatar */}
-            <div className="relative animate-fade-in">
-              <div className="absolute inset-0 rounded-full bg-blue-400/30 blur-2xl animate-pulse" />
-              <div className="relative w-32 h-32 rounded-full overflow-hidden ring-2 ring-white/40 ring-offset-4 ring-offset-transparent shadow-2xl">
-                <img src="./cat-avatar.jpg" alt="黄师傅" className="w-full h-full object-cover" />
+
+      {/* Hero Section - 深色高级荧光UI */}
+      <section className="relative overflow-hidden" style={{ minHeight: '85vh' }}>
+        {/* 多层渐变背景 */}
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% -10%, rgba(251,191,36,0.08) 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 80% 50%, rgba(168,85,247,0.06) 0%, transparent 50%), radial-gradient(ellipse 50% 40% at 20% 80%, rgba(59,130,246,0.05) 0%, transparent 50%), linear-gradient(180deg, #0c0704 0%, #0d0805 40%, #0a0705 100%)' }} />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(circle at 50% 30%, rgba(251,191,36,0.03) 0%, transparent 50%)', animation: 'heroGlow 8s ease-in-out infinite alternate' }} />
+        <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: 'linear-gradient(rgba(251,191,36,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(251,191,36,0.3) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+
+        <style>{`
+          @keyframes heroGlow { from { opacity: 0.5 } to { opacity: 1 } }
+          @keyframes float { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-8px) } }
+          @keyframes shimmer { 0% { background-position: -200% center } 100% { background-position: 200% center } }
+          @keyframes borderGlow { 0%, 100% { border-color: rgba(251,191,36,0.15) } 50% { border-color: rgba(168,85,247,0.25) } }
+          .float-anim { animation: float 6s ease-in-out infinite }
+          .shimmer-text { background: linear-gradient(90deg, rgba(251,191,36,0.4) 0%, #fbbf24 25%, #fff 50%, #fbbf24 75%, rgba(251,191,36,0.4) 100%); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: shimmer 6s linear infinite }
+        `}</style>
+
+        <div className="relative z-10 px-4 sm:px-6 pt-20 pb-24">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex flex-col items-center text-center space-y-8">
+
+              {/* 顶部标签 */}
+              <div className="animate-fade-in">
+                <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[10px] font-bold tracking-[0.2em] uppercase" style={{ background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.12)', color: '#fbbf24' }}>
+                  <Sparkles className="w-3 h-3" />
+                  传统命理 · 数术传承
+                </span>
               </div>
-            </div>
 
-            {/* Title - 彩色楷体大字 */}
-            <div className="space-y-4 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white tracking-tight" style={{ fontFamily: "'Noto Serif SC', 'KaiTi', serif", textShadow: '0 0 40px rgba(255,255,255,0.2)' }}>黄师傅</h1>
-              <p className="text-lg sm:text-xl text-amber-300/80 tracking-widest" style={{ fontFamily: "'Noto Serif SC', serif" }}>野生命理科普博主</p>
-            </div>
+              {/* Avatar */}
+              <div className="relative animate-fade-in" style={{ animationDelay: '0.1s' }}>
+                <div className="absolute -inset-4 rounded-full opacity-40" style={{ background: 'radial-gradient(circle, rgba(251,191,36,0.15) 0%, rgba(168,85,247,0.08) 40%, transparent 70%)', filter: 'blur(12px)', animation: 'heroGlow 4s ease-in-out infinite alternate' }} />
+                <div className="absolute -inset-1 rounded-full" style={{ border: '1px solid rgba(251,191,36,0.15)', animation: 'borderGlow 4s ease-in-out infinite' }} />
+                <div className="relative w-28 h-28 rounded-full overflow-hidden float-anim" style={{ boxShadow: '0 0 30px rgba(251,191,36,0.1), 0 0 60px rgba(168,85,247,0.05)' }}>
+                  <img src="./cat-avatar.jpg" alt="黄师傅" className="w-full h-full object-cover" />
+                </div>
+              </div>
 
-            {/* Description - 白色文字 */}
-            <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
-              <p className="text-xl sm:text-2xl md:text-3xl text-white/90 leading-loose tracking-wider" style={{ fontFamily: "'Noto Serif SC', 'KaiTi', serif", textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
-                精通六爻解卦、紫微斗数、江氏小六壬、面相学
-              </p>
-              <p className="text-sm text-white/40 mt-4 tracking-wider">致力于传统命理文化的科普与传承</p>
-            </div>
+              {/* 名字 — 荧光楷体 */}
+              <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
+                <h1 className="text-6xl sm:text-7xl lg:text-8xl font-bold tracking-tight shimmer-text" style={{ fontFamily: "'KaiTi','STKaiti','Noto Serif SC',serif" }}>
+                  黄师傅
+                </h1>
+              </div>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-wrap items-center justify-center gap-4 animate-fade-in" style={{ animationDelay: '0.3s' }}>
-              <Link to="/tools" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-blue-500 text-white text-base font-medium hover:bg-blue-400 transition-all shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5">
-                <Sparkles className="w-5 h-5" />开始排盘
-              </Link>
-              <Link to="/study" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-white/15 backdrop-blur text-white/90 text-base font-medium border border-white/20 hover:bg-white/25 transition-all hover:-translate-y-0.5">
-                <BookOpen className="w-5 h-5" />学习资料
-              </Link>
+              {/* 副标题 — 紫色荧光 */}
+              <div className="animate-fade-in" style={{ animationDelay: '0.3s' }}>
+                <p className="text-base sm:text-lg tracking-[0.3em]" style={{ fontFamily: "'KaiTi','STKaiti',serif", color: 'rgba(168,85,247,0.7)' }}>
+                  野生命理科普博主
+                </p>
+              </div>
+
+              {/* 介绍 — 玻璃态卡片 */}
+              <div className="animate-fade-in max-w-2xl" style={{ animationDelay: '0.4s' }}>
+                <div className="rounded-2xl p-6 sm:p-8" style={{ background: 'rgba(255,255,255,0.02)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.06)', animation: 'borderGlow 6s ease-in-out infinite' }}>
+                  <p className="text-lg sm:text-xl leading-relaxed tracking-wider" style={{ fontFamily: "'KaiTi','STKaiti','Noto Serif SC',serif", color: 'rgba(232,220,200,0.85)' }}>
+                    精通六爻解卦、紫微斗数、江氏小六壬、面相学
+                  </p>
+                  <div className="h-px w-24 mx-auto my-4" style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.3), transparent)' }} />
+                  <p className="text-sm" style={{ fontFamily: "'Noto Serif SC',serif", color: 'rgba(232,220,200,0.35)', letterSpacing: '0.15em' }}>
+                    致力于传统命理文化的科普与传承
+                  </p>
+                </div>
+              </div>
+
+              {/* 特长标签 */}
+              <div className="animate-fade-in flex flex-wrap justify-center gap-2" style={{ animationDelay: '0.5s' }}>
+                {specialtyTags.map((tag, i) => (
+                  <span key={i} className="px-3 py-1 rounded-full text-xs font-medium" style={{
+                    background: tag.c.b, border: `1px solid ${tag.c.bd}`, color: tag.c.t,
+                    boxShadow: `0 0 12px ${tag.c.s}`,
+                  }}>
+                    {tag.text}
+                  </span>
+                ))}
+              </div>
+
+              {/* CTA Buttons */}
+              <div className="flex flex-wrap items-center justify-center gap-4 animate-fade-in" style={{ animationDelay: '0.6s' }}>
+                <Link to="/tools" className="group inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl text-base font-medium transition-all duration-300 hover:-translate-y-0.5" style={{
+                  background: 'linear-gradient(135deg, rgba(251,191,36,0.15), rgba(251,191,36,0.05))',
+                  border: '1px solid rgba(251,191,36,0.25)',
+                  color: '#fbbf24',
+                  boxShadow: '0 4px 20px rgba(251,191,36,0.1)',
+                }}>
+                  <Sparkles className="w-5 h-5" />开始排盘
+                </Link>
+                <Link to="/study" className="group inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl text-base font-medium transition-all duration-300 hover:-translate-y-0.5" style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  color: 'rgba(232,220,200,0.7)',
+                }}>
+                  <BookOpen className="w-5 h-5" />学习资料
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -182,22 +226,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Login CTA */}
-      {!isLoggedIn && (
-        <section className="px-4 sm:px-6 py-16">
-          <div className="max-w-6xl mx-auto text-center">
-            <div className="bg-white/10 backdrop-blur-md border border-blue-400/20 p-10 sm:p-14 space-y-6 animate-fade-in"
-              style={{ borderRadius: '1.5rem', boxShadow: '0 4px 30px rgba(59,130,246,0.15), inset 0 1px 0 rgba(255,255,255,0.1)' }}>
-              <div className="w-16 h-16 rounded-full bg-blue-500/20 backdrop-blur flex items-center justify-center mx-auto ring-1 ring-blue-400/30 animate-pulse-glow">
-                <LogIn className="w-7 h-7 text-blue-400" />
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-white" style={{ fontFamily: "'Noto Serif SC', serif", textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>开启你的命理之旅</h2>
-              <p className="text-base text-white/30 max-w-lg mx-auto leading-relaxed">注册账号后，可使用所有排盘工具，AI智能解析，云端保存记录，换设备不丢失</p>
-              <Link to="/login" className="inline-flex items-center gap-2 px-10 py-3.5 rounded-full bg-blue-500 text-white text-base font-medium hover:bg-blue-400 transition-all shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5">立即注册</Link>
-            </div>
-          </div>
-        </section>
-      )}
+
     </div>
   );
 }

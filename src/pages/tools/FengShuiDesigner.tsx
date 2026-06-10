@@ -7,6 +7,7 @@ import { ROOM_TYPES, GONG_NAMES, type RoomLayout, type HouseLayout } from '@/dat
 import { Link } from 'react-router-dom';
 import IntroModal from '@/components/IntroModal';
 import { getToolIntro } from '@/data/toolIntros';
+import SaveRecordButton from '@/components/SaveRecordButton';
 
 // ============================================================
 // 风水户型设计器 v3 - 修复方位+手机触摸+数据转录

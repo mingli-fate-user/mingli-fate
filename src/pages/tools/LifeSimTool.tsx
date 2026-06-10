@@ -4,6 +4,7 @@ import { Sparkles, RotateCcw, ChevronRight, Crown, Loader2, Zap, Clock, ArrowLef
 import { streamSiliconAPI } from '@/utils/apiClient';
 import { NO_MARKDOWN_RULE } from '@/utils/aiTextUtils';
 import HighlightText from '@/components/HighlightText';
+import SaveRecordButton from '@/components/SaveRecordButton';
 import {
   TONE_PROMPT, makeStagePrompt, makeConsequencePrompt,
   extractStory, extractChoices, extractConsequence, extractAttrChanges, extractDeath,
@@ -666,6 +667,24 @@ export default function LifeSimTool() {
             {aiLoading && !aiSummary && <div className="flex items-center gap-2 text-xs text-white/20"><Loader2 className="w-3.5 h-3.5 animate-spin" />黄师傅总结中...</div>}
             {aiSummary && <div className="text-xs text-white/50 leading-relaxed whitespace-pre-wrap"><HighlightText text={aiSummary} /></div>}
           </div>
+
+          {/* 保存人生报告 */}
+          <div className="flex justify-center">
+            <SaveRecordButton
+              type="lifesim"
+              typeLabel="命理人生模拟"
+              data={{
+                pillar,
+                birthday,
+                gender,
+                attrs,
+                ending,
+                aiSummary,
+                ageDied: ageDied || undefined,
+              } as unknown as Record<string, unknown>}
+            />
+          </div>
+
           <button onClick={restart} className="w-full py-3.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.3)' }}>
             <RotateCcw className="w-4 h-4" />投胎转世
           </button>

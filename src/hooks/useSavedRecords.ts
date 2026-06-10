@@ -3,10 +3,11 @@ import { useState, useEffect, useCallback } from 'react';
 export interface SavedRecord {
   id: string;
   name: string;
-  type: 'bazi' | 'ziwei' | 'meihua' | 'liuyao' | 'xiaoliuren' | 'qimen' | 'chenggu' | 'jinqiangua' | 'mianxiang' | 'tarot' | 'astro' | 'taiyi' | 'fengshui' | 'xuankong' | 'qimendifa' | 'daliuren';
+  type: 'bazi' | 'ziwei' | 'meihua' | 'liuyao' | 'xiaoliuren' | 'qimen' | 'chenggu' | 'jinqiangua' | 'mianxiang' | 'tarot' | 'astro' | 'taiyi' | 'fengshui' | 'xuankong' | 'qimendifa' | 'daliuren' | 'cezi' | 'huangji' | 'lingqijing' | 'jiemeng' | 'qizheng' | 'dialectics' | 'lifesim' | 'mastergame' | 'tongsheng';
   typeLabel: string;
   data: Record<string, unknown>;
   createdAt: string;
+  savedAt?: string;
 }
 
 const STORAGE_KEY = 'mingli_saved_records';
@@ -49,5 +50,9 @@ export function useSavedRecords() {
     setRecords(prev => prev.map(r => r.id === id ? { ...r, name } : r));
   }, []);
 
-  return { records, addRecord, deleteRecord, renameRecord };
+  const deleteAll = useCallback(() => {
+    setRecords([]);
+  }, []);
+
+  return { records, addRecord, deleteRecord, renameRecord, deleteAll };
 }

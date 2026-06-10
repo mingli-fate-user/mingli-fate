@@ -9,6 +9,7 @@ import { NO_MARKDOWN_RULE } from '@/utils/aiTextUtils';
 import { MARXIST_FRAMEWORK, ANALYSIS_COLORS, type DialecticsAnalysis } from '@/data/dialectics';
 import HighlightText from '@/components/HighlightText';
 import IntroModal from '@/components/IntroModal';
+import SaveRecordButton from '@/components/SaveRecordButton';
 
 const INTRO_DATA = {
   title: '唯物辩证法分析',
@@ -396,6 +397,16 @@ export default function DialecticsTool() {
             <p className="text-sm text-white/80 leading-relaxed mt-2 italic" style={{ fontFamily: "'Noto Serif SC', serif" }}>
               {analysis.synthesis}
             </p>
+          </div>
+
+          {/* 保存分析结果 */}
+          <div className="flex justify-center pt-2">
+            <SaveRecordButton
+              type="dialectics"
+              typeLabel="唯物辩证法"
+              data={analysis as unknown as Record<string, unknown>}
+              extra={{ messages: aiMessages.map(m => ({ role: m.role, content: m.content })) }}
+            />
           </div>
         </div>
       )}
